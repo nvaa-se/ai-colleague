@@ -1,0 +1,26 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-colleague
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: ai.nvaa.se.
+spec:
+  tls:
+    - hosts:
+        - ai.nvaa.se
+      secretName: ai-nvaa-se-tls
+
+  rules:
+    - host: ai.nvaa.se
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-colleague
+                port:
+                  number: 80

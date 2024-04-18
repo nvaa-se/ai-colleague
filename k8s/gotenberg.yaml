@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gotenberg
+  namespace: gotenberg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gotenberg
+  template:
+    metadata:
+      labels:
+        app: gotenberg
+    spec:
+      containers:
+        - image: gotenberg/gotenberg
+          resources:
+            limits:
+              cpu: 500m
+              memory: 2Gi
+          name: gotenberg
+          ports:
+            - containerPort: 3000
+          imagePullPolicy: Always
+      imagePullSecrets:
+        - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gotenberg
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+  selector:
+    app: ai-colleague
