@@ -5,7 +5,7 @@ import express from "express";
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
-import fs from "fs/promises";
+import db from "./services/db";
 
 import discord from "./services/discord";
 // keep this line, otherwise the workers won't be started
@@ -20,18 +20,7 @@ import {
   splitText,
   userFeedback,
 } from "./queues";
-import { summaryTable, scope3Table } from "./lib/discordTable";
 import companyRoutes from "./routes/companyRoutes";
-
-// add dummy job
-// downloadPDF.add('dummy', {
-//   url: 'https://mb.cision.com/Main/17348/3740648/1941181.pdf',
-// })
-
-/*
-downloadPDF.add('volvo', {
-  url: 'https://www.volvogroup.com/content/dam/volvo-group/markets/master/investors/reports-and-presentations/annual-reports/AB-Volvo-Annual-Report-2022.pdf',
-})*/
 
 // start workers
 Object.values(workers).forEach((worker) => worker.run());
@@ -65,35 +54,23 @@ discord.login();
 app.use("/api", companyRoutes);
 app.use("/admin/queues", serverAdapter.getRouter());
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Running on ${port}...`);
-  console.log(`For the UI, open http://localhost:${port}/admin/queues`);
-});
-
+db.init().then(async () => {
+  const anomaly = await db.anomalies.find((elem) => (
+    elem.strAvvikelsetext === "Ej Utställt"
+  ));
+  app.listen(port, () => {
+    console.log(`Running on ${port}...`);
+    console.log(`For the UI, open http://localhost:${port}/admin/queues`);
+    console.log(
+      "Anomalies with Avvikelsetext === 'Ej Utställt",
+      JSON.stringify(
+        anomaly,
+        null,
+        2
+      )
+    );
+  });
+}) ;
 app.get("/", (req, res) => {
   res.send(`Hej! Jag är din nya AI-kollega!`);
-});
-
-app.get("/api/imageFromHtml", async (req, res) => {
-  const url = process.env.GOTENBERG_URL || "http://localhost:3333";
-  const response = await fetch(`${url}/forms/chromium/screenshot/html`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      html: "<h1>Hello world</h1>",
-    }),
-  });
-  response.body.pipeThrough(res);
-});
-
-app.get(`/api/companies`, async function (req, res) {
-  //res.writeHead(200, { 'Content-Type': 'image/png' })
-  const exampleString = (await fs.readFile("./src/data/example.json")).toString();
-  console.log("exampleString", exampleString);
-  const example = JSON.parse(exampleString);
-  const scope2 = await summaryTable(example);
-  const scope3 = await scope3Table(example);
-  res.end(scope2 + "\n" + scope3);
 });
