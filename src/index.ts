@@ -7,9 +7,7 @@ import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
 import fs from "fs/promises";
 
-import discord from "./discord";
-import elastic from "./elastic";
-
+import discord from "./services/discord";
 // keep this line, otherwise the workers won't be started
 import * as workers from "./workers";
 import {
@@ -63,7 +61,6 @@ createBullBoard({
 
 const app = express();
 discord.login();
-elastic.setupIndices();
 
 app.use("/api", companyRoutes);
 app.use("/admin/queues", serverAdapter.getRouter());

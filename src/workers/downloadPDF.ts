@@ -2,9 +2,9 @@ import { Worker, Job } from 'bullmq'
 import redis from '../config/redis'
 import pdf from 'pdf-parse'
 import { splitText } from '../queues'
-import discord from '../discord'
+import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
-import elastic from '../elastic'
+// import elastic from '../elastic'
 
 class JobData extends Job {
   data: {
@@ -50,7 +50,8 @@ const worker = new Worker(
 
       let pdfHash = ''
       try {
-        pdfHash = await elastic.hashPdf(Buffer.from(buffer))
+        // pdfHash = await elastic.hashPdf(Buffer.from(buffer))
+        pdfHash = "fakeHash"
       } catch (error) {
         job.log(`Error indexing PDF: ${error.message}`)
       }

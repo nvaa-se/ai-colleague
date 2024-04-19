@@ -5,7 +5,7 @@ import { OpenAIEmbeddingFunction } from 'chromadb'
 import { indexParagraphs, searchVectors } from '../queues'
 import chromadb from '../config/chromadb'
 import openai from '../config/openai'
-import discord from '../discord'
+import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
 
 class JobData extends Job {

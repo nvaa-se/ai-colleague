@@ -4,7 +4,7 @@ import { ChromaClient } from 'chromadb'
 import { OpenAIEmbeddingFunction } from 'chromadb'
 import { parseText } from '../queues'
 import chromadb from '../config/chromadb'
-import discord from '../discord'
+import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
 
 const embedder = new OpenAIEmbeddingFunction({

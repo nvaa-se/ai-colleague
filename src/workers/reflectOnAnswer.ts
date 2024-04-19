@@ -4,7 +4,7 @@ import OpenAI from 'openai'
 import previousPrompt from '../prompts/parsePDF'
 import prompt from '../prompts/reflect'
 import { discordReview } from '../queues'
-import discord from '../discord'
+import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
 
 const openai = new OpenAI({

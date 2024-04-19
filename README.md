@@ -18,7 +18,7 @@ Some of the following steps will be performed in parallel and most will be async
 
 Get an OPENAI_API_KEY from OpenAI and add it to a .env file in the root directory. Run redis locally or add REDIS_HOST and REDIS_PORT into the .env file.
 
-    nvm use
+    nvm use # or some other node version manager
     npm i
     docker compose up -d &
     npm run dev

@@ -1,7 +1,7 @@
 import { Worker, Job } from "bullmq";
 import redis from "../config/redis";
-import elastic from "../elastic";
-import discord from "../discord";
+// import elastic from "../elastic";
+import discord from "../services/discord";
 import {
   ModalBuilder,
   ButtonBuilder,
@@ -26,9 +26,9 @@ class JobData extends Job {
   };
 }
 
-async function saveToDb(id: string, report: any) {
-  return await elastic.indexReport(id, report);
-}
+// async function saveToDb(id: string, report: any) {
+//   return await elastic.indexReport(id, report);
+// }
 const createButtonRow = (documentId) => {
   // TODO: move to discord.ts
   return new ActionRowBuilder().addComponents(
@@ -53,7 +53,8 @@ const worker = new Worker(
     const parsedJson = JSON.parse(json);
     parsedJson.url = url;
     job.log(`Saving to db: ${pdfHash}`);
-    const documentId = await saveToDb(pdfHash, parsedJson);
+    // const documentId = await saveToDb(pdfHash, parsedJson);
+    const documentId = "fakeId";
     const buttonRow = createButtonRow(documentId);
 
     const summary = await summaryTable(parsedJson);

@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq'
 import redis from '../config/redis'
 import { indexParagraphs } from '../queues'
-import discord from '../discord'
+import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
 
 class JobData extends Job {
