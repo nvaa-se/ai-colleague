@@ -106,7 +106,7 @@ export class DB {
             case "Anl":
               break;
             default:
-              console.error("Unknown field type", fieldType, field, record[field]);
+              // console.error("Unknown field type", fieldType, field, record[field]);
               break;
           }
         }

@@ -13,6 +13,7 @@ import * as workers from "./workers";
 import {
   discordReview,
   downloadPDF,
+  getCustomer,
   indexParagraphs,
   parseText,
   reflectOnAnswer,
@@ -31,6 +32,7 @@ serverAdapter.setBasePath("/admin/queues");
 
 createBullBoard({
   queues: [
+    new BullMQAdapter(getCustomer),
     new BullMQAdapter(downloadPDF),
     new BullMQAdapter(splitText),
     new BullMQAdapter(indexParagraphs),
@@ -55,20 +57,20 @@ app.use("/api", companyRoutes);
 app.use("/admin/queues", serverAdapter.getRouter());
 const port = process.env.PORT || 3000;
 db.init().then(async () => {
-  const anomaly = await db.anomalies.find((elem) => (
-    elem.strAvvikelsetext === "Ej Utställt"
-  ));
+  // const anomaly = await db.anomalies.find((elem) => (
+  //   elem.strAvvikelsetext === "Ej Utställt"
+  // ));
   app.listen(port, () => {
     console.log(`Running on ${port}...`);
     console.log(`For the UI, open http://localhost:${port}/admin/queues`);
-    console.log(
-      "Anomalies with Avvikelsetext === 'Ej Utställt",
-      JSON.stringify(
-        anomaly,
-        null,
-        2
-      )
-    );
+    // console.log(
+    //   "Anomalies with Avvikelsetext === 'Ej Utställt",
+    //   JSON.stringify(
+    //     anomaly,
+    //     null,
+    //     2
+    //   )
+    // );
   });
 }) ;
 app.get("/", (req, res) => {

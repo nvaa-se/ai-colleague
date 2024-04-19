@@ -1,3 +1,4 @@
+export { default as getCustomer } from './getCustomer'
 export { default as parseText } from './parseText'
 export { default as downloadPDF } from './downloadPDF'
 export { default as splitText } from './splitText'

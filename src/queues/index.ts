@@ -6,6 +6,9 @@ const options: QueueOptions = {
   defaultJobOptions: { removeOnComplete: false },
 }
 
+const getCustomer = new Queue('getCustomer', options)
+
+// -- KLIMATKOLLEN BELOW --
 const downloadPDF = new Queue('downloadPDF', options)
 const parseText = new Queue('parseText', options)
 const splitText = new Queue('splitText', options)
@@ -16,6 +19,8 @@ const discordReview = new Queue('discordReview', options)
 const userFeedback = new Queue('userFeedback', options)
 
 export {
+  getCustomer,
+  // -- KLIMATKOLLEN BELOW --
   downloadPDF,
   parseText,
   splitText,
