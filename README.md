@@ -34,6 +34,7 @@ Create a .env file in the root lib and add these tokens/secrets before running t
     DISCORD_APPLICATION_ID=
     DISCORD_TOKEN=
     DISCORD_SERVER_ID=
+    DISCORD_CHANNEL_ID=
 
 ### Next steps / Tasks
 
