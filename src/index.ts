@@ -57,14 +57,14 @@ app.use("/api", companyRoutes);
 app.use("/admin/queues", serverAdapter.getRouter());
 const port = process.env.PORT || 3000;
 db.init().then(async () => {
-  // const anomaly = await db.anomalies.find((elem) => (
+  // const anomaly = await db.deviations.find((elem) => (
   //   elem.strAvvikelsetext === "Ej Utställt"
   // ));
   app.listen(port, () => {
     console.log(`Running on ${port}...`);
     console.log(`For the UI, open http://localhost:${port}/admin/queues`);
     // console.log(
-    //   "Anomalies with Avvikelsetext === 'Ej Utställt",
+    //   "Deviations with Avvikelsetext === 'Ej Utställt",
     //   JSON.stringify(
     //     anomaly,
     //     null,

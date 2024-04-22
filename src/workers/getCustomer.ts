@@ -4,6 +4,7 @@ import { splitText } from '../queues'
 import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
 import db from '../services/db'
+import { getFacilityByPhone, getFullCustomerInfo } from '../services/dbAccess'
 
 // import elastic from '../elastic'
 
@@ -14,6 +15,15 @@ class JobData extends Job {
     messageId: string
   }
 }
+
+const jsonStringifyBigIntToString = (key, value) => {
+  if(typeof value === 'bigint') {
+    return value.toString()
+  } else {
+    return value
+  }
+}
+
 
 const worker = new Worker(
   'getCustomer',
@@ -27,15 +37,22 @@ const worker = new Worker(
     if (message) await message.edit(`Söker efter telefonummer...`)
 
     try {
-      const possibleCustomers = db.facilities.filter((facility) => (
-        facility.strTelefonMobil === phoneNumber ||
-          facility.strTelefon === phoneNumber ||
-          facility.strTelefonArbete === phoneNumber
-      ));
+      const possibleCustomers = await getFacilityByPhone(phoneNumber);
       if (possibleCustomers.length === 0) {
-        message.edit(`Ingen kund hittades med telefonnummer(${phoneNumber})`)
+        message.edit(`Ingen anläggning hittades med telefonnummer(${phoneNumber})`)
+      } else if (possibleCustomers.length === 1) {
+        message.edit(`1 anläggning hittades med telefonnummer(${phoneNumber}):
+        ${possibleCustomers[0].strKundNamnHel} på ${possibleCustomers[0].strAnlAdressHel}, ${possibleCustomers[0].strFastBeteckningHel}`)
+        const fullCustomerInfo = await getFullCustomerInfo(possibleCustomers[0].intRecnum)
+        console.log(
+          JSON.stringify(fullCustomerInfo, jsonStringifyBigIntToString, 4)
+        );
       } else {
-        message.edit(`${possibleCustomers.length} kund(er) hittades med telefonnummer(${phoneNumber})`)
+        let msg = `${possibleCustomers.length} anläggningar hittades`
+        possibleCustomers.forEach((facility, index) => {
+          msg += `\n${index + 1}. ${facility.strKundNamnHel} på ${facility.strAnlAdressHel}, ${facility.strFastBeteckningHel}`
+        })
+        message.edit(msg)
       }
       // if (message) await message.edit(`Tolkar PDF...`)
       // const buffer = await response.arrayBuffer()

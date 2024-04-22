@@ -1,5 +1,5 @@
 
-export type AnomaliesModel = {
+export type DeviationsModel = {
   intRecnum: number
   strAvvikelsekod: string
   strAvvikelsetext: string
@@ -47,7 +47,7 @@ export type AnomaliesModel = {
   forceImage: boolean
   bolBehallaOrder: boolean
 }
-export const AnomaliesFields = [
+export const DeviationsFields = [
   "intRecnum",
   "strAvvikelsekod",
   "strAvvikelsetext",

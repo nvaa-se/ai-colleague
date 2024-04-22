@@ -3,8 +3,8 @@ import fs from 'fs/promises'
 import path from "path";
 
 import {
-  AnomaliesModel,
-  AnomaliesFields,
+  DeviationsModel,
+  DeviationsFields,
   TariffsModel,
   TariffsFields,
   EventsModel,
@@ -14,21 +14,21 @@ import {
 } from "./dbModels"
 
 const fields = {
-  anomalies: AnomaliesFields,
+  deviations: DeviationsFields,
   tariffs: TariffsFields,
   events: EventsFields,
   facilities: FacilitiesFields,
 }
 
 const files = {
-  anomalies: '../../data/anomalies.csv',
+  deviations: '../../data/deviations.csv',
   tariffs: '../../data/tariffs.csv',
   events: '../../data/one_customer_events.csv',
   facilities: '../../data/one_customer_facilities.csv',
 }
 
 type InMemDB = {
-  anomalies: AnomaliesModel[]
+  deviations: DeviationsModel[]
   tariffs: TariffsModel[]
   events: EventsModel[]
   facilities: FacilitiesModel[]
@@ -36,7 +36,7 @@ type InMemDB = {
 type InMemDBKey = keyof InMemDB
 export class DB {
   db: InMemDB = {
-    anomalies: [],
+    deviations: [],
     tariffs: [],
     events: [],
     facilities: [],
@@ -44,8 +44,8 @@ export class DB {
 
   constructor() {}
 
-  get anomalies() {
-    return this.db.anomalies;
+  get deviations() {
+    return this.db.deviations;
   }
   get tariffs() {
     return this.db.tariffs;
@@ -59,7 +59,7 @@ export class DB {
 
   async init() {
     console.log("DB Init");
-    await this.copyRawToDB("anomalies", files.anomalies);
+    await this.copyRawToDB("deviations", files.deviations);
     await this.copyRawToDB("tariffs", files.tariffs);
     await this.copyRawToDB("events", files.events);
     await this.copyRawToDB("facilities", files.facilities);

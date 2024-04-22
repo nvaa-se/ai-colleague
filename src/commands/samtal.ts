@@ -1,11 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js'
 import { getCustomer } from '../queues'
-import {
-  formatNumber,
-  isValidNumber,
-  isValidNumberForRegion,
-  parsePhoneNumber,
-} from "libphonenumber-js";
+import { parsePhoneNumber } from "libphonenumber-js";
 
 export default {
   data: new SlashCommandBuilder()
