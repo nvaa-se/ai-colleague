@@ -35,27 +35,11 @@ spec:
                 secretKeyRef:
                   name: env
                   key: DISCORD_TOKEN
-            - name: GOTENBERG_URL
-              value: http://gotenberg:3000
-            - name: OPENAI_API_KEY
+            - name: MISTRAL_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: env
-                  key: OPENAI_API_KEY
-            - name: OPENAI_ORG_ID
-              valueFrom:
-                secretKeyRef:
-                  name: env
-                  key: OPENAI_ORG_ID
-            - name: ELASTIC_NODE_URL
-              value: http://elasticsearch:9200
-            - name: ELASTIC_INDEX_NAME
-              value: reports
-            # - name: CHROMA_TOKEN
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: chromadb-auth
-            #       key: token
+                  key: MISTRAL_API_KEY
             - name: CHROMA_HOST
               value: http://chromadb:8000
             - name: REDIS_HOST
