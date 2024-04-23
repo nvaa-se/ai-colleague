@@ -1,4 +1,6 @@
+import { ThreadModelFields } from "../models/threadModel";
 import db from "./db";
+import redis from "./redis";
 
 export const getFacilityByPhone = async (phoneNumber: string) => {
   const possibleCustomers = db.facilities.filter((facility) => (
@@ -32,5 +34,33 @@ export const getFullCustomerInfo = async (facilityRecnum: number) => {
     tariffs,
     deviations,
   };
+}
+
+export const addThread = async (threadChannelId: string, facilityRecnum: number) => {
+  try {
+    const redisClient = await redis.getClient()
+    const res = await redisClient.setEx(`threadFacilityRecnum:${threadChannelId}`, 1440 ,String(facilityRecnum))
+    console.log("addThread", res)
+    return res
+  } catch (error) {
+    console.error("addThread", error)
+    return error
+  }
+}
+
+export const getThreadByThreadChannelId = async (threadChannelId: string) => {
+  try {
+    const redisClient = await redis.getClient();
+    const res = await redisClient.get(`threadFacilityRecnum:${threadChannelId}`);
+    await redisClient.expire(`threadFacilityRecnum:${threadChannelId}`, 1440)
+    const result: ThreadModelFields = {
+      facilityRecnum: +res,
+      threadChannelId,
+    }
+    return result
+  } catch (error) {
+    console.error("getThreadByThreadChannelId", error)
+    return error
+  }
 }
 

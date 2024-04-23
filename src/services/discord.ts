@@ -13,12 +13,18 @@ import {
   TextInputStyle,
   Embed,
   EmbedBuilder,
+  ThreadChannel,
 } from 'discord.js'
 import commands from '../commands'
 import config from '../config/discord'
 import { EventEmitter } from 'events'
-import { userFeedback } from '../queues'
+import { handleReply } from '../queues'
 
+const discordIntents = [
+  GatewayIntentBits.Guilds,
+  GatewayIntentBits.GuildMessages,
+  GatewayIntentBits.MessageContent
+]
 export class Discord extends EventEmitter {
   client: Client<boolean>
   rest: REST
@@ -30,13 +36,31 @@ export class Discord extends EventEmitter {
     super()
     this.token = token
     this.channelId = channelId
-    this.client = new Client({ intents: [GatewayIntentBits.Guilds] })
+
+    this.client = new Client({ intents: discordIntents });
     this.rest = new REST().setToken(token)
     this.commands = commands.map((command) => command.data.toJSON())
     this.client.on('ready', () => {
       console.log('discord connected')
       const url = Routes.applicationGuildCommands(clientId, guildId)
       this.rest.put(url, { body: this.commands })
+    })
+    this.client.on('messageCreate', async (message) => {
+      try {
+
+        console.log("messageCreate", message.channel.isThread())
+        if(message.channel.isThread()) {
+          const threadStart = await message.channel.fetchStarterMessage()
+          if(message.author.id !== config.botUserId && threadStart.author.id === config.botUserId) {
+            handleReply.add("handleReply", {
+              threadChannelId: message?.channel?.id,
+              reply: message.content,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error in messageCreate:', error)
+      }
     })
     this.client.on('interactionCreate', async (interaction) => {
       if (interaction.isCommand()) {
@@ -52,87 +76,89 @@ export class Discord extends EventEmitter {
             ephemeral: true,
           })
         }
-      } else if (interaction.isButton()) {
-        let reportState = ''
+      // } else if (interaction.isButton()) {
+      //   let reportState = ''
 
-        const [action, documentId] = interaction.customId.split('_')
-        switch (action) {
-          case 'approve':
-            this.emit('approve', documentId)
-            reportState = 'approved'
-            interaction.update({
-              embeds: [
-                new EmbedBuilder()
-                  .setTitle(`Godkänd (reportId: ${documentId})`)
-                  .setDescription(
-                    `Tack för din granskning, ${interaction?.user?.username}!`
-                  ),
-              ],
-              components: [],
-            })
-            break
-          case 'edit':
-            reportState = 'edited'
-            const input = new TextInputBuilder()
-              .setCustomId('editInput')
-              .setLabel(`Granska utsläppsdata`)
-              .setStyle(TextInputStyle.Paragraph)
+      //   const [action, documentId] = interaction.customId.split('_')
+      //   switch (action) {
+      //     case 'approve':
+      //       this.emit('approve', documentId)
+      //       reportState = 'approved'
+      //       interaction.update({
+      //         embeds: [
+      //           new EmbedBuilder()
+      //             .setTitle(`Godkänd (reportId: ${documentId})`)
+      //             .setDescription(
+      //               `Tack för din granskning, ${interaction?.user?.username}!`
+      //             ),
+      //         ],
+      //         components: [],
+      //       })
+      //       break
+      //     case 'edit':
+      //       reportState = 'edited'
+      //       const input = new TextInputBuilder()
+      //         .setCustomId('editInput')
+      //         .setLabel(`Granska utsläppsdata`)
+      //         .setStyle(TextInputStyle.Paragraph)
 
-            const actionRow =
-              new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
-                input
-              )
+      //       const actionRow =
+      //         new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+      //           input
+      //         )
 
-            const modal = new ModalBuilder()
-              .setCustomId('editModal')
-              .setTitle(`Granska data för...`) // ${parsedJson.companyName}`)
-              .addComponents(actionRow)
-            // todo diskutera hur detta görs på bästa sätt för mänskliga granskaren. vad är alex input?
+      //       const modal = new ModalBuilder()
+      //         .setCustomId('editModal')
+      //         .setTitle(`Granska data för...`) // ${parsedJson.companyName}`)
+      //         .addComponents(actionRow)
+      //       // todo diskutera hur detta görs på bästa sätt för mänskliga granskaren. vad är alex input?
 
-            await interaction.showModal(modal)
+      //       await interaction.showModal(modal)
 
-            const submitted = await interaction
-              .awaitModalSubmit({
-                time: 60000 * 20, // user has to submit the modal within 20 minutes
-                filter: (i) => i.user.id === interaction.user.id, // only user who clicked button can interact with modal
-              })
-              .catch((error) => {
-                console.error(error)
-                return null
-              })
+      //       const submitted = await interaction
+      //         .awaitModalSubmit({
+      //           time: 60000 * 20, // user has to submit the modal within 20 minutes
+      //           filter: (i) => i.user.id === interaction.user.id, // only user who clicked button can interact with modal
+      //         })
+      //         .catch((error) => {
+      //           console.error(error)
+      //           return null
+      //         })
 
-            if (submitted) {
-              const userInput = submitted.fields.getTextInputValue('editInput')
-              //this.emit('edit', documentId, userInput)
+      //       if (submitted) {
+      //         const userInput = submitted.fields.getTextInputValue('editInput')
+      //         //this.emit('edit', documentId, userInput)
 
-              await submitted.reply({
-                content: `Tack för din feedback: \n ${userInput}`,
-              })
-              await userFeedback.add('userFeedback', {
-                documentId,
-                messageId: '',
-                channelId,
-                feedback: userInput,
-              })
-            }
-            break
-          case 'reject':
-            reportState = 'rejected'
-            this.emit('reject', documentId)
-            interaction.update({
-              content: 'Rejected!',
-              embeds: [],
-              components: [],
-            })
-            break
-        }
-        if (reportState !== '') {
-          try {
-            // await elastic.updateDocumentState(documentId, reportState)
-          } catch (error) {
-            //job.log(`Error updating document state: ${error.message}`)
-          }
-        }
+      //         await submitted.reply({
+      //           content: `Tack för din feedback: \n ${userInput}`,
+      //         })
+      //         await userFeedback.add('userFeedback', {
+      //           documentId,
+      //           messageId: '',
+      //           channelId,
+      //           feedback: userInput,
+      //         })
+      //       }
+      //       break
+      //     case 'reject':
+      //       reportState = 'rejected'
+      //       this.emit('reject', documentId)
+      //       interaction.update({
+      //         content: 'Rejected!',
+      //         embeds: [],
+      //         components: [],
+      //       })
+      //       break
+      //   }
+      //   if (reportState !== '') {
+      //     try {
+      //       // await elastic.updateDocumentState(documentId, reportState)
+      //     } catch (error) {
+      //       //job.log(`Error updating document state: ${error.message}`)
+      //     }
+      //   }
+      } else {
+        console.log('interaction:')
       }
     })
   }
@@ -140,6 +166,9 @@ export class Discord extends EventEmitter {
   login(token = this.token) {
     this.client.login(token)
     return this
+  }
+  async channel(channelId) {
+    return await this.client.channels.fetch(channelId)
   }
 
   async sendMessageToChannel(channelId, message) {

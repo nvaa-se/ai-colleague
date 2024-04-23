@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import * as dotenv from "dotenv";
 dotenv.config(); // keep this line first in file
 
 import express from "express";
@@ -6,20 +6,12 @@ import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
 import db from "./services/db";
-
 import discord from "./services/discord";
 // keep this line, otherwise the workers won't be started
 import * as workers from "./workers";
 import {
-  discordReview,
-  downloadPDF,
-  getCustomer,
-  indexParagraphs,
-  parseText,
-  reflectOnAnswer,
-  searchVectors,
-  splitText,
-  userFeedback,
+  handleCall,
+  handleReply,
 } from "./queues";
 import companyRoutes from "./routes/companyRoutes";
 
@@ -32,15 +24,8 @@ serverAdapter.setBasePath("/admin/queues");
 
 createBullBoard({
   queues: [
-    new BullMQAdapter(getCustomer),
-    new BullMQAdapter(downloadPDF),
-    new BullMQAdapter(splitText),
-    new BullMQAdapter(indexParagraphs),
-    new BullMQAdapter(searchVectors),
-    new BullMQAdapter(parseText),
-    new BullMQAdapter(reflectOnAnswer),
-    new BullMQAdapter(discordReview),
-    new BullMQAdapter(userFeedback),
+    new BullMQAdapter(handleCall),
+    new BullMQAdapter(handleReply),
   ],
   serverAdapter: serverAdapter,
   options: {

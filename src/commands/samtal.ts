@@ -1,54 +1,57 @@
-import { SlashCommandBuilder } from 'discord.js'
-import { getCustomer } from '../queues'
+import { CacheType, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js'
+import { handleCall } from '../queues'
 import { parsePhoneNumber } from "libphonenumber-js";
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('samtal')
+    .setName("samtal")
     .addStringOption((option) =>
-      option.setName('telefonnummer').setDescription('inkommande ringare').setRequired(true)
+      option
+        .setName("telefonnummer")
+        .setDescription("inkommande ringare")
+        .setRequired(true)
     )
     .setDescription(
-      'Skicka in kundens telefonnummer och få tillbaka en bra kundbild.'
+      "Skicka in kundens telefonnummer och få tillbaka en bra kundbild."
     ),
 
-  async execute(interaction) {
-    console.log('samtal')
-    const telefonnummer = interaction.options.getString('telefonnummer')
+  async execute(interaction: ChatInputCommandInteraction<CacheType>) {
+    console.log("samtal");
+    const telefonnummer = interaction.options.getString("telefonnummer");
     if (!telefonnummer) {
       await interaction.reply({
-        content: 'Telefonnummer saknas. Försök igen med /samtal <telefonnummer>',
+        content:
+          "Telefonnummer saknas. Försök igen med /samtal <telefonnummer>",
         ephemeral: true,
-      })
+      });
 
-      return
+      return;
     }
 
     let phoneNumber = parsePhoneNumber(telefonnummer, "SE");
-    if(!phoneNumber.isValid()) {
+    if (!phoneNumber.isValid()) {
       await interaction.reply({
         content: `Telefonnummret (${telefonnummer}) är inte giltigt. Försök igen med /samtal <telefonnummer>`,
         ephemeral: true,
-      })
+      });
 
-      return
+      return;
     }
-    const formattedPhoneNumber = phoneNumber.formatInternational().replace(/[\s-]/g, '')
-
-
+    const formattedPhoneNumber = phoneNumber
+      .formatInternational()
+      .replace(/[\s-]/g, "");
 
     const reply = await interaction.reply({
       content: `Tack! Snart kommer det information om din inringare (${formattedPhoneNumber}).`,
-      fetchReply: true
-    })
+      fetchReply: true,
+    });
     const channelId = interaction.channelId;
     const messageId = reply.id;
 
-    getCustomer.add("get customer " + formattedPhoneNumber, {
+    handleCall.add("handleCall " + formattedPhoneNumber, {
       phoneNumber: formattedPhoneNumber,
       channelId,
       messageId,
     });
-
   },
-}
+};

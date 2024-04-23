@@ -3,21 +3,22 @@ import fs from 'fs/promises'
 import path from "path";
 
 import {
-  DeviationsModel,
-  DeviationsFields,
-  TariffsModel,
-  TariffsFields,
-  EventsModel,
-  EventsFields,
-  FacilitiesModel,
-  FacilitiesFields,
-} from "./dbModels"
+  DeviationModel,
+  DeviationFields,
+  TariffModel,
+  TariffFields,
+  EventModel,
+  EventFields,
+  FacilityModel,
+  FacilityFields,
+} from "../models"
+import { ThreadModel } from '../models/threadModel';
 
 const fields = {
-  deviations: DeviationsFields,
-  tariffs: TariffsFields,
-  events: EventsFields,
-  facilities: FacilitiesFields,
+  deviations: DeviationFields,
+  tariffs: TariffFields,
+  events: EventFields,
+  facilities: FacilityFields,
 }
 
 const files = {
@@ -27,34 +28,49 @@ const files = {
   facilities: '../../data/one_customer_facilities.csv',
 }
 
-type InMemDB = {
-  deviations: DeviationsModel[]
-  tariffs: TariffsModel[]
-  events: EventsModel[]
-  facilities: FacilitiesModel[]
+type CSVMemDB = {
+  // CSV data
+  deviations: DeviationModel[]
+  tariffs: TariffModel[]
+  events: EventModel[]
+  facilities: FacilityModel[]
 }
-type InMemDBKey = keyof InMemDB
+type CSVMemDBKey = keyof CSVMemDB
+
+type InMemDB = {
+  threads: ThreadModel
+}
 export class DB {
-  db: InMemDB = {
+  csvDb: CSVMemDB = {
+    // CSV Read Only DB
     deviations: [],
     tariffs: [],
     events: [],
     facilities: [],
   };
 
+  memDb: InMemDB = {
+    // In Memory Mutable DB
+    threads: {}
+  }
+
   constructor() {}
 
   get deviations() {
-    return this.db.deviations;
+    return this.csvDb.deviations as readonly DeviationModel[];
   }
   get tariffs() {
-    return this.db.tariffs;
+    return this.csvDb.tariffs as readonly TariffModel[];
   }
   get events() {
-    return this.db.events;
+    return this.csvDb.events as readonly EventModel[];
   }
   get facilities() {
-    return this.db.facilities;
+    return this.csvDb.facilities as readonly FacilityModel[];
+  }
+
+  get threads() {
+    return this.memDb.threads;
   }
 
   async init() {
@@ -66,7 +82,7 @@ export class DB {
     console.log("DB Init done");
   }
 
-  async copyRawToDB(dbName: InMemDBKey, csvRawFile: string) {
+  async copyRawToDB(dbName: CSVMemDBKey, csvRawFile: string) {
     const absFilePath = path.resolve(__dirname, csvRawFile);
     console.log("Initializing DB", dbName);
     const content = await fs.readFile(absFilePath);
@@ -111,7 +127,7 @@ export class DB {
           }
         }
       });
-      this.db[dbName].push(record);
+      this.csvDb[dbName].push(record);
     });
   }
 }

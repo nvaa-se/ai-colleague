@@ -32,12 +32,14 @@ NOTE: To add a new job to the queue manually you can uncomment the lines in inde
 
 Create a .env file in the root lib and add these tokens/secrets before running the application:
 
-    OPENAI_API_KEY=
-    OPENAI_ORG_ID=
+    MISTRAL_API_KEY=
     DISCORD_APPLICATION_ID=
     DISCORD_TOKEN=
     DISCORD_SERVER_ID=
     DISCORD_CHANNEL_ID=
+    REDIS_HOST=
+    REDIS_PORT=
+    # REDIS_PASSWORD=
 
 ### Next steps / Tasks
 
