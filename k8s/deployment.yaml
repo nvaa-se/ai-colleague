@@ -14,7 +14,7 @@ spec:
         app: ai-colleague
     spec:
       containers:
-        - image: ghcr.io/nvaa-se/ai-colleague:1.1.118 # {"$imagepolicy": "flux-system:ai-colleague"}
+        - image: ghcr.io/nvaa-se/ai-colleague:main # {"$imagepolicy": "flux-system:cloaca"}
           resources: {}
           name: ai-colleague
           ports:
