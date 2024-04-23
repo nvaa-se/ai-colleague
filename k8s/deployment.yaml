@@ -66,5 +66,3 @@ spec:
                   name: redis
                   key: redis-password
           imagePullPolicy: Always
-      imagePullSecrets:
-        - name: regcred
