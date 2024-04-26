@@ -1,5 +1,5 @@
 import { CacheType, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js'
-import { handleCall } from '../queues'
+import { handleCommandSamtal } from "../../queues";
 import { parsePhoneNumber } from "libphonenumber-js";
 
 export default {
@@ -48,7 +48,7 @@ export default {
     const channelId = interaction.channelId;
     const messageId = reply.id;
 
-    handleCall.add("handleCall " + formattedPhoneNumber, {
+    handleCommandSamtal.add("handleCommandSamtal " + formattedPhoneNumber, {
       phoneNumber: formattedPhoneNumber,
       channelId,
       messageId,
