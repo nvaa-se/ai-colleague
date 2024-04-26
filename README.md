@@ -8,18 +8,6 @@ Some of the following steps will be performed in parallel and most will be async
 1. Find customer based on phone number (workers/handleCall.ts)
 2. Reply with customer information (workers/handleReply.ts)
 
-
-### Old workflow
-1. Import PDF from URL 
-2. Parse Text 
-3. Send text to OpenAI for embeddings (workers/indexParagraphs.ts)
-4. Index vector database with embeddings (workers/indexParagraphs.ts)
-5. Build query from prompt together with relevant embeddings
-6. Send to LLM 
-7. Verify the results first automatically
-8. Verify results in Discord channel
-9. Save to Wikidata or other database (not done)
-
 ### Get Started
 
 Get an OPENAI_API_KEY from OpenAI and add it to a .env file in the root directory. Run redis locally or add REDIS_HOST and REDIS_PORT into the .env file.

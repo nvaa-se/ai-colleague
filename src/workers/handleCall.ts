@@ -36,6 +36,7 @@ const worker = new Worker(
     if (message) await message.edit(`Söker efter telefonummer...`)
 
     try {
+
       const possibleCustomers = await getFacilityByPhone(phoneNumber);
       if (possibleCustomers.length === 0) {
         message.edit(`Ingen anläggning hittades med telefonnummer(${phoneNumber})`)
@@ -69,6 +70,8 @@ const worker = new Worker(
         })
         message.edit(msg)
       }
+
+      // return value can be accessed from a series of workers chained in a flow. Send the relevant output data that can be used in the next step or null until we use the data.
       return 'fake text' // TODO: WHAT TO RETURN HERE?
     } catch (error) {
       if (message)
