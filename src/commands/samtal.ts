@@ -31,7 +31,7 @@ export default {
     let phoneNumber = parsePhoneNumber(telefonnummer, "SE");
     if (!phoneNumber.isValid()) {
       await interaction.reply({
-        content: `Telefonnummret (${telefonnummer}) är inte giltigt. Försök igen med /samtal <telefonnummer>`,
+        content: `Telefonnumret (${telefonnummer}) är inte giltigt. Försök igen med /samtal <telefonnummer>`,
         ephemeral: true,
       });
 
