@@ -2,6 +2,13 @@ import { ThreadModelFields } from "../models/threadModel";
 import db from "./db";
 import redis from "./redis";
 
+
+const redisPrefixes = {
+  threadFacilityRecnum: "threadFacilityRecnum",
+  threadReplies: "threadReplies",
+}
+const EXPIRY = 1440;
+
 export const getFacilityByPhone = async (phoneNumber: string) => {
   const possibleCustomers = db.facilities.filter((facility) => (
     facility.strTelefonMobil === phoneNumber ||
@@ -36,31 +43,44 @@ export const getFullCustomerInfo = async (facilityRecnum: number) => {
   };
 }
 
-export const addThread = async (threadChannelId: string, facilityRecnum: number) => {
-  try {
-    const redisClient = await redis.getClient()
-    const res = await redisClient.setEx(`threadFacilityRecnum:${threadChannelId}`, 1440 ,String(facilityRecnum))
-    console.log("addThread", res)
-    return res
-  } catch (error) {
-    console.error("addThread", error)
-    return error
-  }
+export const addReplyToThread = async (threadChannelId: string, reply: string) => {
+  const redisClient = await redis.getClient()
+  const res = await redisClient.rPush(`${redisPrefixes.threadReplies}:${threadChannelId}`, reply)
+  const res2 = await redisClient.expire(`${redisPrefixes.threadReplies}:${threadChannelId}`, EXPIRY);
+  console.log("addReplyToThread", reply, res)
+  return res
 }
 
-export const getThreadByThreadChannelId = async (threadChannelId: string) => {
-  try {
-    const redisClient = await redis.getClient();
-    const res = await redisClient.get(`threadFacilityRecnum:${threadChannelId}`);
-    await redisClient.expire(`threadFacilityRecnum:${threadChannelId}`, 1440)
-    const result: ThreadModelFields = {
-      facilityRecnum: +res,
-      threadChannelId,
-    }
-    return result
-  } catch (error) {
-    console.error("getThreadByThreadChannelId", error)
-    return error
+export const getThreadContents = async (threadChannelId: string) => {
+  const redisClient = await redis.getClient()
+  const res = await redisClient.lRange(`${redisPrefixes.threadReplies}:${threadChannelId}`, 0, -1)
+  if(!res) {
+    return []
   }
+  const res2 = await redisClient.expire(`${redisPrefixes.threadReplies}:${threadChannelId}`, EXPIRY)
+  console.log("getThreadContent", res.length)
+  return res
+}
+
+export const addThread = async (threadChannelId: string, facilityRecnum: number) => {
+  const redisClient = await redis.getClient()
+  const res = await redisClient.setEx(`${redisPrefixes.threadFacilityRecnum}:${threadChannelId}`, EXPIRY ,String(facilityRecnum))
+  console.log("addThread", res)
+  return res
+}
+
+export const getFacilityThreadByThreadChannelId = async (threadChannelId: string) => {
+  const redisClient = await redis.getClient();
+  const res = await redisClient.get(`${redisPrefixes.threadFacilityRecnum}:${threadChannelId}`);
+  console.log("getFacilityThreadByThreadChannelId", res);
+  await redisClient.expire(`${redisPrefixes.threadFacilityRecnum}:${threadChannelId}`, EXPIRY)
+  if(!res) {
+    return null
+  }
+  const result: ThreadModelFields = {
+    facilityRecnum: +res,
+    threadChannelId,
+  }
+  return result
 }
 

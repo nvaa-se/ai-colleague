@@ -1,8 +1,12 @@
 import { Worker, Job } from 'bullmq'
 import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
-import { getFullCustomerInfo, getThreadByThreadChannelId } from '../services/dbAccess'
+import {
+  addReplyToThread,
+  getFacilityThreadByThreadChannelId,
+} from '../services/dbAccess'
 import redis from "../config/redis";
+import { answerReply } from '../queues';
 
 class JobData extends Job {
   data: {
@@ -11,22 +15,24 @@ class JobData extends Job {
   }
 }
 
-
-
 const worker = new Worker(
   'handleReply',
   async (job: JobData) => {
     const { threadChannelId, reply } = job.data
     try {
       job.log(`handleReply: ${reply}`);
-      const threadModel = await getThreadByThreadChannelId(threadChannelId)
+      const thread = await discord.channel(threadChannelId) as TextChannel
+      thread.sendTyping()
+
+      const threadModel = await getFacilityThreadByThreadChannelId(threadChannelId)
       if(threadModel) {
-        const customer = await getFullCustomerInfo(threadModel.facilityRecnum)
-        const thread = await discord.channel(threadChannelId) as TextChannel
-        thread.sendTyping()
-        thread.send(`Tack för ditt svar, kunden har ${customer.events.length} händelser och ${customer.facility.AntTj} tjänster.`)
+        await addReplyToThread(threadChannelId, reply)
+        answerReply.add('answer reply in thread ' + threadChannelId,{
+          threadChannelId,
+        })
       } else {
         job.log("Kunde inte hitta tråd-koppling till facility")
+        thread.send("Tråden för gammal, starta en ny tråd")
       }
       return 'fake text'
     } catch (error) {
