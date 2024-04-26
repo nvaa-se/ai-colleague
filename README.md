@@ -4,15 +4,18 @@
 
 Some of the following steps will be performed in parallel and most will be asynchronous. If a process is failed it's important to be able to restart it after a new code release so we can iterate on the prompts etc without having to restart the whole process again.
 
-1. Find customer based on phone number
-2. Reply with customer information
+### New workflow
+1. Find customer based on phone number (workers/handleCall.ts)
+2. Reply with customer information (workers/handleReply.ts)
 
-1. Import PDF from URL
-2. Parse Text
-3. Send text to OpenAI for embeddings
-4. Index vector database with embeddings
+
+### Old workflow
+1. Import PDF from URL 
+2. Parse Text 
+3. Send text to OpenAI for embeddings (workers/indexParagraphs.ts)
+4. Index vector database with embeddings (workers/indexParagraphs.ts)
 5. Build query from prompt together with relevant embeddings
-6. Send to LLM
+6. Send to LLM 
 7. Verify the results first automatically
 8. Verify results in Discord channel
 9. Save to Wikidata or other database (not done)
