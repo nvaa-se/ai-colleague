@@ -23,7 +23,7 @@ import { handleReply } from '../queues'
 const discordIntents = [
   GatewayIntentBits.Guilds,
   GatewayIntentBits.GuildMessages,
-  GatewayIntentBits.MessageContent
+  GatewayIntentBits.MessageContent,
 ]
 export class Discord extends EventEmitter {
   client: Client<boolean>
@@ -37,7 +37,7 @@ export class Discord extends EventEmitter {
     this.token = token
     this.channelId = channelId
 
-    this.client = new Client({ intents: discordIntents });
+    this.client = new Client({ intents: discordIntents })
     this.rest = new REST().setToken(token)
     this.commands = commands.map((command) => command.data.toJSON())
     this.client.on('ready', () => {
@@ -47,14 +47,20 @@ export class Discord extends EventEmitter {
     })
     this.client.on('messageCreate', async (message) => {
       try {
-        console.log("messageCreate", message.channel.isThread())
-        if(message.channel.isThread()) {
+        console.log('messageCreate', message.channel.isThread())
+        if (message.channel.isThread()) {
           const threadStart = await message.channel.fetchStarterMessage()
-          if(message.author.id !== config.botUserId && threadStart.author.id === config.botUserId) {
-            handleReply.add("handleReply", {
+          if (
+            message.author.id !== config.botUserId &&
+            threadStart.author.id === config.botUserId
+          ) {
+            console.log('handling reply')
+            handleReply.add('handleReply', {
               threadChannelId: message?.channel?.id,
               reply: message.content,
-            });
+            })
+          } else {
+            console.log('wrong author, thread or whatever')
           }
         }
       } catch (error) {

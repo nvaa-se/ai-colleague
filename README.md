@@ -4,8 +4,9 @@
 
 Some of the following steps will be performed in parallel and most will be asynchronous. If a process is failed it's important to be able to restart it after a new code release so we can iterate on the prompts etc without having to restart the whole process again.
 
-1. Find customer based on phone number
-2. Reply with customer information
+### New workflow
+1. Find customer based on phone number (workers/handleCall.ts)
+2. Reply with customer information (workers/handleReply.ts)
 
 ### Get Started
 
