@@ -6,6 +6,8 @@ import {
   getThreadByThreadChannelId,
 } from '../services/dbAccess'
 import redis from '../config/redis'
+import { createCompletion } from '../services/mistral'
+import prompt from '../prompts/generateCustomerInfoSQL'
 
 class JobData extends Job {
   data: {
@@ -37,6 +39,21 @@ const worker = new Worker(
         // system
         // user
         // mistral svarar med sql-fråga som vi kör
+        thread.sendTyping()
+        console.log('Mistral completion')
+
+        const sqlQueryResponse = await createCompletion([
+          {
+            role: 'system',
+            content: prompt,
+          },
+        ])
+
+        const sqlQuery = sqlQueryResponse.choices?.[0].message?.content
+
+        console.log('Mistral response', sqlQuery)
+
+        thread.send(sqlQuery)
       } else {
         job.log('Kunde inte hitta tråd-koppling till facility')
       }
