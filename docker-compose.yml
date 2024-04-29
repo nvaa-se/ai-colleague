@@ -26,6 +26,23 @@ services:
     volumes:
       - chroma-data:/chroma/chroma
 
+  postgres:
+    image: postgis/postgis:14-3.3-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    networks:
+      - ai-colleague
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - type: bind
+        source: ./scripts/init.sql
+        target: /docker-entrypoint-initdb.d/init.sql
+
+
 networks:
   ai-colleague:
     driver: bridge
@@ -33,3 +50,4 @@ networks:
 volumes:
   redis:
   chroma-data:
+  postgres:
