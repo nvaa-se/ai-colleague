@@ -59,8 +59,6 @@ export class Discord extends EventEmitter {
               threadChannelId: message?.channel?.id,
               reply: message.content,
             })
-          } else {
-            console.log('wrong author, thread or whatever')
           }
         }
       } catch (error) {

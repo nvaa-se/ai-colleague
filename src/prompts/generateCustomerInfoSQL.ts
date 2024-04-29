@@ -5,7 +5,9 @@ a call. These are some examples of the tables. Please return with a joined
 query that fetches most relevant information from each table for a given phone
 number.
 
-Parameter name: phoneNumber
+Parameter name is "strAnlNr" in the facilities table. This is the same as the
+"strAnlnr" in the customer_events table.
+Parameter also known as "Anläggningsnummer"
 
 Reply with the SQL query that fetches the relevant information. It is very
 important that your resonse only includes the valid SQL, no comments or other text.
@@ -21,7 +23,7 @@ recHandelse;intKundnr;strAnlnr;intTjanstnr;intFakturaadress;datDatumFrom;datDatu
 13224555;171501;4212108221;510310;NULL;2023-07-28 08:57:00.000;2023-07-28 08:57:00.000;2EXSLANG;NULL;NULL;NULL;101;NULL;NULL;NULL;NULL;81560209;ENFAKTKÖRN;1;NULL;0;0;DKLBC;532957;2;NULL;NULL;NULL;NULL;NULL;Slam;NULL;2023-07-28 09:01:29.823;174;DEBI;NULL;NULL;7/31/23 0:00;NULL;NULL;NULL;NULL;6392936;NULL;NULL;NULL;NULL;NULL;NULL;0;SL 101;NULL;NULL;0;6633079.14438582000000000000;204689.33340857900000000000;NULL;NULL;2023-07-28 00:00:00.000;NULL;NULL;NULL;NULL;NULL;NULL
 9035470;171501;4212108221;495219;NULL;2021-06-28 11:19:37.000;NULL;M140-26Å;NULL;08887EF0FF;NULL;HH01;H195;NULL;HSIT1D1;CriHam;NULL;ENFAKTKÖRN;0;NULL;0;1;HUSH_3;NULL;NULL;NULL;NULL;NULL;NULL;NULL;NULL;NULL;2021-06-28 11:31:09.287;174;AVVI;NULL;NULL;6/30/21 0:00;NULL;NULL;NULL;NULL;2168465;NULL;NULL;NULL;NULL;NULL;NULL;0;NULL;NULL;NULL;1;6633067.63018517000000000000;204701.94514716200000000000;NULL;NULL;2021-06-28 00:00:00.000;NULL;NULL;NULL;NULL;NULL;NULL
 \`\`\`
-  
+
 ## table: deviations
 \`\`\`csv
 intRecnum;strAvvikelsekod;strAvvikelsetext;bolSkallRapporteraSomHandelse;strHandelsetyp;bolFakturerasEj;bolSkallSkapaOrder;bolSkallSkapaNyHandelse;strNyHandelsetyp;bolNyHandelseFakturerasEj;bolSkallAterrapporteraOrder;strFakturaFrekvens;strTaxekod;strRenhOrdertyp;datSkapad;intSkapadAv;bolSkallSkapaArende;strArendeTyp;strArendeAvser;bolAvraknasEj;bolUppdateraVagbeskrivning;bolUppdateraKorordning;bolMatchaKorlistanamn;bolSkrivOverVagbeskrivning;bolUppdateraKvantitet;bolUppdateraKoordinat;strDelproduktVagbeskrivning;strKvantitetskod;strDelproduktKvantitet;bolSkickaSMS;datUpphorddatum;bolSkickaEpost;strProdukt;strVAOrdertyp;bolAnnulleraOrder;bolKvitteraOrder;strAutoMeddelandeEpostKod;strAutoMeddelandeSmsKod;bolUppdateraStoppKoordinat;allowFreeText;forceFreeText;allowDoubleAmount;forceDoubleAmount;allowImage;forceImage;bolBehallaOrder
