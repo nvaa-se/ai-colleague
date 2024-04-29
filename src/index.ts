@@ -7,13 +7,8 @@ import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
 import db from "./services/db";
 import discord from "./services/discord";
-// keep this line, otherwise the workers won't be started
+import { answerReply, handleCommandSamtal, handleReply } from "./queues";
 import * as workers from "./workers";
-import {
-  handleCall,
-  handleReply,
-} from "./queues";
-import companyRoutes from "./routes/companyRoutes";
 
 // start workers
 Object.values(workers).forEach((worker) => worker.run());
@@ -24,8 +19,9 @@ serverAdapter.setBasePath("/admin/queues");
 
 createBullBoard({
   queues: [
-    new BullMQAdapter(handleCall),
+    new BullMQAdapter(handleCommandSamtal),
     new BullMQAdapter(handleReply),
+    new BullMQAdapter(answerReply),
   ],
   serverAdapter: serverAdapter,
   options: {
@@ -38,24 +34,12 @@ createBullBoard({
 const app = express();
 discord.login();
 
-app.use("/api", companyRoutes);
 app.use("/admin/queues", serverAdapter.getRouter());
 const port = process.env.PORT || 3000;
 db.init().then(async () => {
-  // const anomaly = await db.deviations.find((elem) => (
-  //   elem.strAvvikelsetext === "Ej Utställt"
-  // ));
   app.listen(port, () => {
     console.log(`Running on ${port}...`);
     console.log(`For the UI, open http://localhost:${port}/admin/queues`);
-    // console.log(
-    //   "Deviations with Avvikelsetext === 'Ej Utställt",
-    //   JSON.stringify(
-    //     anomaly,
-    //     null,
-    //     2
-    //   )
-    // );
   });
 }) ;
 app.get("/", (req, res) => {

@@ -4,10 +4,13 @@ import { TextChannel } from 'discord.js'
 import {
   getFullCustomerInfo,
   getThreadByThreadChannelId,
+  addReplyToThread,
+  getFacilityThreadByThreadChannelId,
 } from '../services/dbAccess'
 import redis from '../config/redis'
 import { createCompletion } from '../services/mistral'
 import prompt from '../prompts/generateCustomerInfoSQL'
+import { answerReply } from '../queues'
 
 class JobData extends Job {
   data: {
@@ -22,15 +25,17 @@ const worker = new Worker(
     const { threadChannelId, reply } = job.data
     try {
       job.log(`handleReply: ${reply}`)
-      const threadModel = await getThreadByThreadChannelId(threadChannelId)
-      if (threadModel) {
-        const customer = await getFullCustomerInfo(threadModel.facilityRecnum)
+      const thread = (await discord.channel(threadChannelId)) as TextChannel
+      thread.sendTyping()
 
-        const thread = (await discord.channel(threadChannelId)) as TextChannel
-        thread.sendTyping()
-        thread.send(
-          `Tack för ditt svar, kunden har ${customer.events.length} händelser och ${customer.facility.AntTj} tjänster.`
-        )
+      const threadModel = await getFacilityThreadByThreadChannelId(
+        threadChannelId
+      )
+      if (threadModel) {
+        await addReplyToThread(threadChannelId, reply)
+        answerReply.add('answer reply in thread ' + threadChannelId, {
+          threadChannelId,
+        })
 
         // Embeddings
         // 1. Prompten
@@ -52,10 +57,9 @@ const worker = new Worker(
         const sqlQuery = sqlQueryResponse.choices?.[0].message?.content
 
         console.log('Mistral response', sqlQuery)
-
-        thread.send(sqlQuery)
       } else {
         job.log('Kunde inte hitta tråd-koppling till facility')
+        thread.send('Tråden för gammal, starta en ny tråd')
       }
       return 'fake text'
     } catch (error) {

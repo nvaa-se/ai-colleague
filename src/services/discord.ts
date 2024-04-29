@@ -15,7 +15,7 @@ import {
   EmbedBuilder,
   ThreadChannel,
 } from 'discord.js'
-import commands from '../commands'
+import commands from '../discord/commands'
 import config from '../config/discord'
 import { EventEmitter } from 'events'
 import { handleReply } from '../queues'
@@ -81,87 +81,6 @@ export class Discord extends EventEmitter {
             ephemeral: true,
           })
         }
-        // } else if (interaction.isButton()) {
-        //   let reportState = ''
-
-        //   const [action, documentId] = interaction.customId.split('_')
-        //   switch (action) {
-        //     case 'approve':
-        //       this.emit('approve', documentId)
-        //       reportState = 'approved'
-        //       interaction.update({
-        //         embeds: [
-        //           new EmbedBuilder()
-        //             .setTitle(`Godkänd (reportId: ${documentId})`)
-        //             .setDescription(
-        //               `Tack för din granskning, ${interaction?.user?.username}!`
-        //             ),
-        //         ],
-        //         components: [],
-        //       })
-        //       break
-        //     case 'edit':
-        //       reportState = 'edited'
-        //       const input = new TextInputBuilder()
-        //         .setCustomId('editInput')
-        //         .setLabel(`Granska utsläppsdata`)
-        //         .setStyle(TextInputStyle.Paragraph)
-
-        //       const actionRow =
-        //         new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
-        //           input
-        //         )
-
-        //       const modal = new ModalBuilder()
-        //         .setCustomId('editModal')
-        //         .setTitle(`Granska data för...`) // ${parsedJson.companyName}`)
-        //         .addComponents(actionRow)
-        //       // todo diskutera hur detta görs på bästa sätt för mänskliga granskaren. vad är alex input?
-
-        //       await interaction.showModal(modal)
-
-        //       const submitted = await interaction
-        //         .awaitModalSubmit({
-        //           time: 60000 * 20, // user has to submit the modal within 20 minutes
-        //           filter: (i) => i.user.id === interaction.user.id, // only user who clicked button can interact with modal
-        //         })
-        //         .catch((error) => {
-        //           console.error(error)
-        //           return null
-        //         })
-
-        //       if (submitted) {
-        //         const userInput = submitted.fields.getTextInputValue('editInput')
-        //         //this.emit('edit', documentId, userInput)
-
-        //         await submitted.reply({
-        //           content: `Tack för din feedback: \n ${userInput}`,
-        //         })
-        //         await userFeedback.add('userFeedback', {
-        //           documentId,
-        //           messageId: '',
-        //           channelId,
-        //           feedback: userInput,
-        //         })
-        //       }
-        //       break
-        //     case 'reject':
-        //       reportState = 'rejected'
-        //       this.emit('reject', documentId)
-        //       interaction.update({
-        //         content: 'Rejected!',
-        //         embeds: [],
-        //         components: [],
-        //       })
-        //       break
-        //   }
-        //   if (reportState !== '') {
-        //     try {
-        //       // await elastic.updateDocumentState(documentId, reportState)
-        //     } catch (error) {
-        //       //job.log(`Error updating document state: ${error.message}`)
-        //     }
-        //   }
       } else {
         console.log('interaction:')
       }
