@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 
 services:
   # Packages
@@ -30,6 +30,7 @@ services:
     image: postgis/postgis:14-3.3-alpine
     restart: always
     environment:
+      - DATABASE=nvaa_ai_colleague
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
@@ -38,10 +39,6 @@ services:
       - ai-colleague
     volumes:
       - postgres:/var/lib/postgresql/data
-      - type: bind
-        source: ./scripts/init.sql
-        target: /docker-entrypoint-initdb.d/init.sql
-
 
 networks:
   ai-colleague:
