@@ -2,8 +2,6 @@ import { Worker, Job } from 'bullmq'
 import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
 import {
-  getFullCustomerInfo,
-  getThreadByThreadChannelId,
   addReplyToThread,
   getFacilityThreadByThreadChannelId,
 } from '../services/dbAccess'
