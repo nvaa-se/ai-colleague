@@ -5,26 +5,36 @@
 Some of the following steps will be performed in parallel and most will be asynchronous. If a process is failed it's important to be able to restart it after a new code release so we can iterate on the prompts etc without having to restart the whole process again.
 
 ### onCommand flow
+
 ```mermaid
 flowchart TB
+    LD[DISCORD]
+    LR[REDIS]
 
-    0(Discord onCommand)
+    0(onCommand)
     A[handleCommandSamtal]
-    B(Lookup CustomerID)
+    B([Lookup CustomerID])
     C{Customer Found}
-    D1(Reply Not Found)
-    D2(Reply found)
-    E(Initiate Thread)
-    F(Discord — Create Thread)
-    G(Redis — Store ThreadID with CustomerID)
-    H(Discord — Reply with Customer Card)
-    I(Redis — add reply to threadcontext)
+    D1([Reply Not Found])
+    D2([Reply found])
+    E([Initiate Thread])
+    F([Create Thread])
+    G([Store ThreadID with CustomerID])
+    H([Reply with Customer Card])
+    I([add reply to threadcontext])
+
+    subgraph LEGEND
+        direction TB
+        LD
+        LR
+    end
 
     0 --> A --> B --> C --Found--> D2 --> E
     C --Not found--> D1
     E --> F --> G --> H --> I
 
     %% Discord Style
+    style LD color:#FFFFFF, fill:#5865F2, stroke:#5865F2
     style 0 color:#FFFFFF, fill:#5865F2, stroke:#5865F2
     style D1 color:#FFFFFF, fill:#5865F2, stroke:#5865F2
     style D2 color:#FFFFFF, fill:#5865F2, stroke:#5865F2
@@ -32,77 +42,148 @@ flowchart TB
     style H color:#FFFFFF, fill:#5865F2, stroke:#5865F2
 
     %% Redis Style
+    style LR color:#FFFFFF, stroke:#A41e11, fill:#A41e11
     style G color:#FFFFFF, stroke:#A41e11, fill:#A41e11
     style I color:#FFFFFF, stroke:#A41e11, fill:#A41e11
 ```
 
 ### onMessage flow
+
 ```mermaid
 flowchart TB
+    LD[DISCORD]
+    LR[REDIS]
+    LW[BullMQ Queue/Worker]
 
-    0(Discord onMessage)
+    0(onMessage)
     A[handleReply]
-    B{Redis — Lookup thread-customer connection}
-    C[Redis — Save message in thread]
-    D[answerReply]
-    E[Discord — Reply too old thread]
-    
+    B{Lookup thread-customer connection}
+    C([Save message in thread])
+    D[summarizeAsk]
+    E([Reply too old thread])
+
+    subgraph LEGEND
+        direction TB
+        LD
+        LR
+        LW
+    end
+
 
     0 --> A --> B --Found--> C --> D
     B --Not found--> E
 
+    %% BullMQ Queue Style
+    style LW color:#ffffff, fill:#303a4b, stroke:#454b52
+    style A color:#ffffff, fill:#303a4b, stroke:#454b52
+    style D color:#ffffff, fill:#303a4b, stroke:#454b52
+
     %% Discord Style
+    style LD color:#FFFFFF, fill:#5865F2, stroke:#5865F2
     style 0 color:#FFFFFF, fill:#5865F2, stroke:#5865F2
-    style 0 color:#FFFFFF, fill:#5865F2, stroke:#5865F2
+    style E color:#FFFFFF, fill:#5865F2, stroke:#5865F2
 
     %% Redis Style
+    style LR color:#FFFFFF, stroke:#A41e11, fill:#A41e11
     style B color:#FFFFFF, stroke:#A41e11, fill:#A41e11
     style C color:#FFFFFF, stroke:#A41e11, fill:#A41e11
+
 ```
 
 ### AI overarching flow
+
 ```mermaid
 flowchart TB
+    LD[DISCORD]
+    LM[MISTRAL]
+    LS[MSSQL]
+    LR[REDIS]
+    LW[BullMQ Queue/Worker]
 
-    0[handleReply]
-    A[answerReply]
-    B(Discord — sendTyping)
-    C(Redis — Lookup thread-customer connection)
-    D(Redis — Lookup messages in thread)
-    E[Mistral — Summarize Ask]
-    F[Mistral - Plan how to answer]
-    G[Split Mistral plan into tasks]
-    H[Mistral - For each task, generate SQL]
-    I{Run SQL against MSSQL}
-    J[Mistral - Ask to verify SQL]
-    
-    K[Join data into prompt with question and plan]
-    L[Mistral - Answer Questions with prompt]
-    M[Discord Reply answer]
-    
+    0(onMessage)
+    A[handleReply]
 
-    0 --> A --Found--> C --> D --> E --> F --> G --> K --> L --> M
-    G --> H --> I --SUCCESS--> K
-    I --FAIL--> J --> H
-    A --> B --every 8 seconds--> B
+    B1([fetch thread context])
+    B2([take first 2 and last message])
+    B3[Ask to summarize]
+
+    C1[Plan how to answer]
+
+    D1([Split Mistral plan into tasks])
+    D2[For each task, generate SQL]
+    D3{Run SQL against MSSQL}
+    D4[Ask to verify, and generate new SQL]
+
+    D5[Join data into prompt with question and plan]
+    L[Answer Questions with prompt]
+    M[Reply answer]
+
+    NA(["NOT IMPLEMENTED YET"])
+
+    subgraph LEGEND
+        direction TB
+        LD
+        LM
+        LS
+        LR
+        LW
+    end
+
+    0 ==> A ==> summarizeAsk ==> planAnswer ==> dataFetcher ==> answerQuestion ==> M
+    subgraph summarizeAsk
+        direction TB
+        B1 --> B2 --> B3
+    end
+    subgraph planAnswer
+        direction TB
+        C1
+    end
+    subgraph dataFetcher
+        direction TB
+        NA
+        D1 --> D2 --> D3 --SUCCESS--> D5
+        D3 --FAIL--> D4 --> D3
+    end
+    subgraph answerQuestion
+        direction TB
+        L
+    end
+
+
+    %% BullMQ Queue Style
+    style LW color:#ffffff, fill:#303a4b, stroke:#454b52
+    style A color:#ffffff, fill:#303a4b, stroke:#454b52
+    style summarizeAsk color:#ffffff, fill:#303a4b, stroke:#454b52
+    style planAnswer color:#ffffff, fill:#303a4b, stroke:#454b52
+    style dataFetcher color:#ffffff, fill:#303a4b, stroke:#454b52
+    style answerQuestion color:#ffffff, fill:#303a4b, stroke:#454b52
 
     %% Discord Style
-    style B color:#FFFFFF, fill:#5865F2, stroke:#5865F2
+    style LD color:#FFFFFF, fill:#5865F2, stroke:#5865F2
+    style 0 color:#FFFFFF, fill:#5865F2, stroke:#5865F2
     style M color:#FFFFFF, fill:#5865F2, stroke:#5865F2
 
     %% Redis Style
-    style C color:#FFFFFF, stroke:#A41e11, fill:#A41e11
-    style D color:#FFFFFF, stroke:#A41e11, fill:#A41e11
+    style LR color:#FFFFFF, stroke:#A41e11, fill:#A41e11
+
+    %% Not implemented Style
+    style NA color:#FF0000, fill:#303a4b, stroke:#FF0000, stroke-width:4px, stroke-dasharray: 5, 5
 
     %% Mistral Style
-    style E color:#000000, stroke:#ff4900, fill:#ff7000
-    style F color:#000000, stroke:#ff4900, fill:#ff7000
-    style H color:#000000, stroke:#ff4900, fill:#ff7000
-    style J color:#000000, stroke:#ff4900, fill:#ff7000
+    style LM color:#000000, stroke:#ff4900, fill:#ff7000
+    style B3 color:#000000, stroke:#ff4900, fill:#ff7000
+    style C1 color:#000000, stroke:#ff4900, fill:#ff7000
+    style D2 color:#000000, stroke:#ff4900, fill:#ff7000
+    style D4 color:#000000, stroke:#ff4900, fill:#ff7000
     style L color:#000000, stroke:#ff4900, fill:#ff7000
+
+    %% MSSQL Style
+    style LS color:#537F18, fill:#BDD352, stroke:#537F18
+    style D3 color:#537F18, fill:#BDD352, stroke:#537F18
 ```
 
 ## New workflow
+
 1. Find customer based on phone number (workers/handleCall.ts)
 2. Reply with customer information (workers/handleReply.ts)
 
@@ -134,7 +215,7 @@ Create a .env file in the root lib and add these tokens/secrets before running t
 
 ## Operations
 
-This application is run in Kubernetes and uses FluxCD as CD pipeline. To create secret in the k8s cluster - use this command to transfer your .env file as secret to the application
+This application is run in Kubernetes and uses FluxCD as CD pipeline. To create secret in the k8s use this command to transfer your .env file as secret to the application
 
     kubectl create secret generic env --from-env-file=.env
 
