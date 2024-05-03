@@ -6,7 +6,7 @@ import {
   getFacilityThreadByThreadChannelId,
 } from '../services/dbAccess'
 import redis from '../config/redis'
-import { answerReply } from '../queues'
+import { summarizeAsk } from '../queues'
 
 class JobData extends Job {
   data: {
@@ -29,8 +29,10 @@ const worker = new Worker(
       )
       if (threadModel) {
         await addReplyToThread(threadChannelId, reply)
-        answerReply.add('answer reply in thread ' + threadChannelId, {
+        const msg = await thread.send('Sparar frågan...')
+        summarizeAsk.add('answer reply in thread ' + threadChannelId, {
           threadChannelId,
+          msgId: msg.id,
         })
       } else {
         job.log('Kunde inte hitta tråd-koppling till facility')

@@ -28,7 +28,8 @@ const worker = new Worker(
           `Ingen anläggning hittades med telefonnummer(${phoneNumber})`
         );
       } else if (possibleCustomers.length === 1) {
-        message.edit(`1 anläggning hittades med telefonnummer(${phoneNumber})`);
+        const initialResponse = `1 anläggning hittades med telefonnummer(${phoneNumber})`
+        message.edit(initialResponse);
         // const fullCustomerInfo = await getFullCustomerInfo(possibleCustomers[0].intRecnum)
         const threadStart = new Date()
           .toLocaleString("sv-SE", {
@@ -56,6 +57,7 @@ KundNummer: \`${possibleCustomers[0].intKundnr}\`
 Anläggningsnummer: \`${possibleCustomers[0].strAnlnr}\``;
 
       await addThread(thread.id, possibleCustomers[0].intRecnum);
+      await addReplyToThread(thread.id, initialResponse);
       await addReplyToThread(thread.id, reply);
       const res = await thread.send(reply);
 
