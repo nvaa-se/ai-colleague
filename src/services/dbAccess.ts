@@ -1,18 +1,7 @@
 import { ThreadModelFields } from '../models/threadModel'
-//import db from './db'
 import redis from './redis'
 import knex from 'knex'
 import config from '../config/sqlserver'
-
-console.log({
-  host: config.host,
-  user: config.user,
-  password: config.password,
-  database: config.database,
-  port: config.port,
-  timezone: 'UTC',
-  dateStrings: true,
-})
 
 const db = knex({
   client: 'mssql',
@@ -81,11 +70,7 @@ export const addReplyToThread = async (
     `${redisPrefixes.threadReplies}:${threadChannelId}`,
     reply
   )
-  const res2 = await redisClient.expire(
-    `${redisPrefixes.threadReplies}:${threadChannelId}`,
-    EXPIRY
-  )
-  console.log('addReplyToThread', reply, res)
+  await extendThreadLifeTime(threadChannelId)
   return res
 }
 
@@ -99,11 +84,7 @@ export const getThreadContents = async (threadChannelId: string) => {
   if (!res) {
     return []
   }
-  const res2 = await redisClient.expire(
-    `${redisPrefixes.threadReplies}:${threadChannelId}`,
-    EXPIRY
-  )
-  console.log('getThreadContent', res.length)
+  await extendThreadLifeTime(threadChannelId)
   return res
 }
 
@@ -117,8 +98,15 @@ export const addThread = async (
     EXPIRY,
     String(facilityRecnum)
   )
-  console.log('addThread', res)
   return res
+}
+
+export const extendThreadLifeTime = async (threadChannelId: string) => {
+  const redisClient = await redis.getClient()
+  const threadKey = `${redisPrefixes.threadFacilityRecnum}:${threadChannelId}`
+  const contextKey = `${redisPrefixes.threadReplies}:${threadChannelId}`
+  await redisClient.expire(threadKey, EXPIRY)
+  await redisClient.expire(contextKey, EXPIRY)
 }
 
 export const getFacilityThreadByThreadChannelId = async (
@@ -128,11 +116,7 @@ export const getFacilityThreadByThreadChannelId = async (
   const res = await redisClient.get(
     `${redisPrefixes.threadFacilityRecnum}:${threadChannelId}`
   )
-  console.log('getFacilityThreadByThreadChannelId', res)
-  await redisClient.expire(
-    `${redisPrefixes.threadFacilityRecnum}:${threadChannelId}`,
-    EXPIRY
-  )
+  await extendThreadLifeTime(threadChannelId)
   if (!res) {
     return null
   }

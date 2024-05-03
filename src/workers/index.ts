@@ -1,4 +1,6 @@
-export { default as handleCommandSamtal } from "./handleCommandSamtal";
+export { default as handleCommandSamtal } from './handleCommandSamtal'
 export { default as handleReply } from './handleReply'
-export { default as answerReply } from "./answerReply";
-
+export { default as summarizeAsk } from './summarizeAsk'
+export { default as planAnswer } from './planAnswer'
+export { default as dataFetcher } from './dataFetcher'
+export { default as answerQuestion } from './answerQuestion'

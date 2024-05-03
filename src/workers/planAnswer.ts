@@ -1,44 +1,36 @@
 import { Worker, Job } from 'bullmq'
 import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
-import {
-  addReplyToThread,
-  getFullCustomerInfo,
-  getFacilityThreadByThreadChannelId,
-  getThreadContents,
-} from '../services/dbAccess'
+import { getFacilityThreadByThreadChannelId } from '../services/dbAccess'
 import redis from '../config/redis'
 import { createCompletion } from '../services/mistral'
-import prompt from '../prompts/generateCustomerInfoSQL'
+import prompt from '../prompts/planAnswer'
+import { dataFetcher } from '../queues'
 
 class JobData extends Job {
   data: {
     threadChannelId: string
+    msgId: string
+    distilledQuestion: string
   }
 }
 
 const worker = new Worker(
-  'answerReply',
+  'planAnswer',
   async (job: JobData) => {
-    const { threadChannelId } = job.data
+    const { threadChannelId, msgId, distilledQuestion } = job.data
+    let typingHandle: NodeJS.Timeout
     try {
       const thread = (await discord.channel(threadChannelId)) as TextChannel
+      const msg = await thread.messages.fetch(msgId)
+      await msg.edit(distilledQuestion + '\n\nFunderar över frågan...')
       const threadModel = await getFacilityThreadByThreadChannelId(
         threadChannelId
       )
       if (threadModel) {
-        //        const customer = await getFullCustomerInfo(threadModel.facilityRecnum)
-        thread.sendTyping()
-        const fullThread = await getThreadContents(threadChannelId)
-        // const botReply = `Tack för ditt svar, kunden har ${customer.events.length} händelser och ${customer.facility.AntTj} tjänster. Tråden har nu ${fullThread.length} meddelanden.`
-        // Embeddings
-        // 1. Prompten
-        // 2. Exempel på data
-        // Message array
-        // system
-        // user
-        // mistral svarar med sql-fråga som vi kör
-        console.log('Mistral completion')
+        typingHandle = setInterval(() => {
+          thread.sendTyping()
+        }, 8000)
 
         const sqlQueryResponse = await createCompletion([
           {
@@ -47,24 +39,32 @@ const worker = new Worker(
           },
           {
             role: 'user',
-            content: JSON.stringify(fullThread),
+            content: distilledQuestion,
           },
         ])
+        clearInterval(typingHandle)
 
-        const mistralResponse = sqlQueryResponse.choices?.[0].message?.content
-
-        thread.send(mistralResponse)
-        await addReplyToThread(threadChannelId, mistralResponse)
+        const plan = sqlQueryResponse.choices?.[0].message?.content
+        console.log('## MISTRAL PLAN: ', plan)
+        msg.edit(distilledQuestion + '\n\nPlanering klar: \n' + plan)
+        dataFetcher.add('dataFetcher', {
+          threadChannelId,
+          msgId,
+          distilledQuestion,
+          plan,
+        })
+        return plan
       } else {
         job.log(
           'Kunde inte hitta tråd-koppling till facility, förmodligen timeout'
         )
-        thread.send(
+        msg.edit(
           'Den här konversationen har tagit för lång tid, börja om igen.'
         )
       }
-      return 'fake text'
+      return 'n/a'
     } catch (error) {
+      clearInterval(typingHandle)
       job.log(`Fel vid answerReply för tråd ${threadChannelId}`)
       throw error
     }

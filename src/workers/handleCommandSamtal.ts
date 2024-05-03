@@ -6,7 +6,6 @@ import {
   addReplyToThread,
   addThread,
   getFacilityByPhone,
-  getFullCustomerInfo,
 } from '../services/dbAccess'
 
 class JobData extends Job {
@@ -33,8 +32,9 @@ const worker = new Worker(
           `Ingen anläggning hittades med telefonnummer(${phoneNumber})`
         )
       } else if (possibleCustomers.length === 1) {
-        message.edit(`1 anläggning hittades med telefonnummer(${phoneNumber})`)
-
+        const initialResponse = `1 anläggning hittades med telefonnummer(${phoneNumber})`
+        message.edit(initialResponse)
+        // const fullCustomerInfo = await getFullCustomerInfo(possibleCustomers[0].intRecnum)
         const threadStart = new Date()
           .toLocaleString('sv-SE', {
             day: '2-digit',

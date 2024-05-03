@@ -26,20 +26,6 @@ services:
     volumes:
       - chroma-data:/chroma/chroma
 
-  postgres:
-    image: postgis/postgis:14-3.3-alpine
-    restart: always
-    environment:
-      - DATABASE=nvaa_ai_colleague
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - '5432:5432'
-    networks:
-      - ai-colleague
-    volumes:
-      - postgres:/var/lib/postgresql/data
-
 networks:
   ai-colleague:
     driver: bridge
@@ -47,4 +33,3 @@ networks:
 volumes:
   redis:
   chroma-data:
-  postgres:
