@@ -34,7 +34,7 @@ const redisPrefixes = {
 const EXPIRY = 1440
 
 export const getFacilityByPhone = async (phoneNumber: string) => {
-  const possibleCustomers = db
+  const possibleCustomers = await db
     .table('vwAnlaggning')
     .where('strAnlnr', phoneNumber)
 
@@ -42,26 +42,26 @@ export const getFacilityByPhone = async (phoneNumber: string) => {
 }
 
 export const getEventsByFacility = async (facilityStrAnlnr: string) => {
-  return []
-  //return db.events.filter((event) => event.strAnlnr === facilityStrAnlnr)
+  const events = await db
+    .table('tbFuHandelse')
+    .where('strAnlnr', facilityStrAnlnr)
+  return events
 }
 
 export const getTariffs = async () => {
-  return []
-  //return db.tariffs
+  return await db.table('tbFuTaxa')
 }
 
 export const getDeviations = async () => {
-  return []
-  //return db.deviations
+  return await db.table('tbFuRenhAvvikelse')
 }
 
 export const getFullCustomerInfo = async (facilityRecnum: number) => {
-  return {}
-  /*const facility = db.facilities.find(
-    (facility) => facility.intRecnum === facilityRecnum
-  )
-  const events = await getEventsByFacility(facility.strAnlnr)
+  const facility = (
+    await db.table('vwAnlaggning').where('intRecnum', facilityRecnum)
+  )[0]
+
+  const events = await getEventsByFacility(facility)
   const tariffs = await getTariffs()
   const deviations = await getDeviations()
   return {
@@ -69,7 +69,7 @@ export const getFullCustomerInfo = async (facilityRecnum: number) => {
     events,
     tariffs,
     deviations,
-  }*/
+  }
 }
 
 export const addReplyToThread = async (
