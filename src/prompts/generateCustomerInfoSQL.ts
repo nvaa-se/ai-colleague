@@ -6,11 +6,13 @@ query that fetches most relevant information from each table for a given phone
 number.
 
 Parameter name is "strAnlNr" in the facilities table. This is the same as the
-"strAnlnr" in the customer_events table.
-Parameter also known as "Anläggningsnummer"
+"strAnlnr" in the customer_events table. Put the value of strAnlNr in the
+SQL query as a parameter.
 
 Reply with the SQL query that fetches the relevant information. It is very
-important that your resonse only includes the valid SQL, no comments or other text.
+important that your response only includes the valid SQL, no comments or other text.
+Also, do not create aliases for columns. And do not rename fields, they have
+to be exactly the same as in the examples below.
 
 ## table: tbFuHandelse
 \`\`\`csv

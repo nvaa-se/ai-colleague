@@ -61,7 +61,7 @@ export const getFullCustomerInfo = async (facilityRecnum: number) => {
     await db.table('vwAnlaggning').where('intRecnum', facilityRecnum)
   )[0]
 
-  const events = await getEventsByFacility(facility)
+  const events = await getEventsByFacility(facility.strAnlnr)
   const tariffs = await getTariffs()
   const deviations = await getDeviations()
   return {
