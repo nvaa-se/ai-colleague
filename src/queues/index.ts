@@ -8,6 +8,16 @@ const options: QueueOptions = {
 
 const handleCommandSamtal = new Queue('handleCommandSamtal', options)
 const handleReply = new Queue('handleReply', options)
-const answerReply = new Queue('answerReply', options)
+const summarizeAsk = new Queue('summarizeAsk', options)
+const planAnswer = new Queue('planAnswer', options)
+const dataFetcher = new Queue('dataFetcher', options)
+const answerQuestion = new Queue('answerQuestion', options)
 
-export { handleCommandSamtal, handleReply, answerReply };
+export {
+  handleCommandSamtal,
+  handleReply,
+  summarizeAsk,
+  planAnswer,
+  dataFetcher,
+  answerQuestion,
+}
