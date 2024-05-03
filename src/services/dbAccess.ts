@@ -1,6 +1,20 @@
 import { ThreadModelFields } from '../models/threadModel'
-import db from './db'
 import redis from './redis'
+import knex from 'knex'
+import config from '../config/sqlserver'
+
+const db = knex({
+  client: 'mssql',
+  connection: {
+    type: 'ntlm',
+    server: config.host,
+    domain: 'KOMMUN',
+    userName: config.user,
+    password: config.password,
+    database: config.database,
+    port: config.port,
+  },
+})
 
 const redisPrefixes = {
   threadFacilityRecnum: 'threadFacilityRecnum',
@@ -9,31 +23,33 @@ const redisPrefixes = {
 const EXPIRY = 1440
 
 export const getFacilityByPhone = async (phoneNumber: string) => {
-  const possibleCustomers = db.facilities.filter(
-    (facility) =>
-      facility.strTelefonMobil === phoneNumber ||
-      facility.strTelefon === phoneNumber ||
-      facility.strTelefonArbete === phoneNumber
-  )
+  const possibleCustomers = await db
+    .table('vwAnlaggning')
+    .where('strAnlnr', phoneNumber)
+
   return possibleCustomers
 }
 
 export const getEventsByFacility = async (facilityStrAnlnr: string) => {
-  return db.events.filter((event) => event.strAnlnr === facilityStrAnlnr)
+  const events = await db
+    .table('tbFuHandelse')
+    .where('strAnlnr', facilityStrAnlnr)
+  return events
 }
 
 export const getTariffs = async () => {
-  return db.tariffs
+  return await db.table('tbFuTaxa')
 }
 
 export const getDeviations = async () => {
-  return db.deviations
+  return await db.table('tbFuRenhAvvikelse')
 }
 
 export const getFullCustomerInfo = async (facilityRecnum: number) => {
-  const facility = db.facilities.find(
-    (facility) => facility.intRecnum === facilityRecnum
-  )
+  const facility = (
+    await db.table('vwAnlaggning').where('intRecnum', facilityRecnum)
+  )[0]
+
   const events = await getEventsByFacility(facility.strAnlnr)
   const tariffs = await getTariffs()
   const deviations = await getDeviations()
