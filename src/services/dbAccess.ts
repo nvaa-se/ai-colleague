@@ -22,10 +22,14 @@ const redisPrefixes = {
 }
 const EXPIRY = 1440
 
-export const getFacilityByPhone = async (phoneNumber: string) => {
+export const runQuery = async (query: string) => {
+  return await db.raw(query)
+}
+
+export const getFacilityByStrAnlNr = async (strAnlNr: string) => {
   const possibleCustomers = await db
     .table('vwAnlaggning')
-    .where('strAnlnr', phoneNumber)
+    .where('strAnlnr', strAnlNr)
 
   return possibleCustomers
 }
@@ -88,15 +92,13 @@ export const getThreadContents = async (threadChannelId: string) => {
   return res
 }
 
-export const addThread = async (
-  threadChannelId: string,
-  facilityRecnum: number
-) => {
+export const addThread = async (threadChannelId: string, strAnlNr: string) => {
+  console.log('ADDING THREAD TO REDIS', threadChannelId, strAnlNr)
   const redisClient = await redis.getClient()
   const res = await redisClient.setEx(
     `${redisPrefixes.threadFacilityRecnum}:${threadChannelId}`,
     EXPIRY,
-    String(facilityRecnum)
+    strAnlNr
   )
   return res
 }
@@ -121,7 +123,7 @@ export const getFacilityThreadByThreadChannelId = async (
     return null
   }
   const result: ThreadModelFields = {
-    facilityRecnum: +res,
+    facilityRecnum: res,
     threadChannelId,
   }
   return result

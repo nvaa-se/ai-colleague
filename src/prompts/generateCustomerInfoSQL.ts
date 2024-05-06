@@ -9,10 +9,32 @@ Parameter name is "strAnlNr" in the facilities table. This is the same as the
 "strAnlnr" in the customer_events table. Put the value of strAnlNr in the
 SQL query as a parameter.
 
-Reply with the SQL query that fetches the relevant information. It is very
+Reply in a JSON structure with the SQL query  that fetches the relevant information. It is very
 important that your response only includes the valid SQL, no comments or other text.
 Also, do not create aliases for columns. And do not rename fields, they have
 to be exactly the same as in the examples below.
+
+The reply JSON structure should look like this, there must always be at least one parameter to replace:
+
+\`\`\`
+{
+  "sql": "SELECT ... FROM ... WHERE ... f.strAnlnr='???strAnlNr???' ...",
+  "paramsToReplace": [
+    { "param": "strAnlNr", "placeholder": "???strAnlNr???" }
+  ]
+}
+\`\`\`
+
+SQL key is a string with the SQL query. paramsToReplace is an array of strings that should exist within the SQL query.
+The Database Server is running Microsoft SQL Server 2024.
+SELECT AS FEW FIELDS AS POSSIBLE TO REDUCE DATA TRANSFER SIZE.
+The software running the queries will replace param strings with actual values before executing the query.
+THE ONLY ACCEPTED PARAMETERS ARE: "strAnlNr".
+
+SORT DATA AS LATEST FIRST unless the user asks otherwise
+
+ANSWER ONLY WITH THE JSON STRUCTURE, NO MARKDOWN! NO COMMENTS! OR OTHER TEXT!
+MAKE SURE THE RESPONSE IS VALID JSON AND VALID SQL!
 
 ## table: tbFuHandelse
 \`\`\`csv

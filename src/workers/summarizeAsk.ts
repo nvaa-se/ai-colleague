@@ -13,6 +13,7 @@ import { planAnswer } from '../queues'
 class JobData extends Job {
   data: {
     threadChannelId: string
+    strAnlNr: string
     msgId: string
   }
 }
@@ -20,64 +21,54 @@ class JobData extends Job {
 const worker = new Worker(
   'summarizeAsk',
   async (job: JobData) => {
-    const { threadChannelId, msgId } = job.data
+    const { threadChannelId, msgId, strAnlNr } = job.data
     let typingHandle: NodeJS.Timeout
     try {
       const thread = (await discord.channel(threadChannelId)) as TextChannel
       const msg = await thread.messages.fetch(msgId)
       await msg.edit('Funderar över frågan...')
-      const threadModel = await getFacilityThreadByThreadChannelId(
-        threadChannelId
-      )
-      if (threadModel) {
-        typingHandle = setInterval(() => {
-          thread.sendTyping()
-        }, 8000)
 
-        const fullThread = await getThreadContents(threadChannelId)
+      typingHandle = setInterval(() => {
+        thread.sendTyping()
+      }, 8000)
 
-        const partThread = JSON.stringify([
-          fullThread[0],
-          fullThread[1],
-          fullThread[fullThread.length - 1],
-        ])
+      const fullThread = await getThreadContents(threadChannelId)
 
-        const sqlQueryResponse = await createCompletion([
-          {
-            role: 'system',
-            content: prompt,
-          },
-          {
-            role: 'user',
-            content: partThread,
-          },
-        ])
-        clearInterval(typingHandle)
+      const partThread = JSON.stringify([
+        fullThread[0],
+        fullThread[1],
+        fullThread[fullThread.length - 1],
+      ])
 
-        const distilledQuestion = sqlQueryResponse.choices?.[0].message?.content
-        console.log('## MISTRAL SUMMARIZE: ', distilledQuestion)
+      const sqlQueryResponse = await createCompletion([
+        {
+          role: 'system',
+          content: prompt,
+        },
+        {
+          role: 'user',
+          content: partThread,
+        },
+      ])
+      clearInterval(typingHandle)
 
-        if (distilledQuestion) {
-          planAnswer.add('answer in thread ' + threadChannelId, {
-            threadChannelId,
-            msgId,
-            distilledQuestion,
-          })
-        } else {
-          msg.edit('Kunde inte förstå frågan, försök igen')
-        }
+      const distilledQuestion = sqlQueryResponse.choices?.[0].message?.content
+      console.log('## MISTRAL SUMMARIZE: ', distilledQuestion)
+
+      if (distilledQuestion) {
+        planAnswer.add('answer in thread ' + threadChannelId, {
+          threadChannelId,
+          msgId,
+          strAnlNr,
+          distilledQuestion,
+        })
+        return { distilledQuestion }
       } else {
-        job.log(
-          'Kunde inte hitta tråd-koppling till facility, förmodligen timeout'
-        )
-        msg.edit(
-          'Den här konversationen har tagit för lång tid, börja om igen.'
-        )
+        msg.edit('Kunde inte förstå frågan, försök igen')
       }
-      return 'fake text'
     } catch (error) {
       clearInterval(typingHandle)
-      job.log(`Fel vid answerReply för tråd ${threadChannelId}`)
+      job.log(`Fel vid summarizeAsk för tråd ${threadChannelId}`)
       throw error
     }
   },
