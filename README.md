@@ -140,7 +140,6 @@ flowchart TB
     end
     subgraph dataFetcher
         direction TB
-        %%NA
         D1 --> D2 --> D3 --SUCCESS--> D5
         D3 --FAIL--> D4 --> D3
     end

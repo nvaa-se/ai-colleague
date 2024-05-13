@@ -31,16 +31,19 @@ const worker = new Worker(
         thread.sendTyping()
       }, 8000)
 
-      const sqlQueryResponse = await createCompletion([
-        {
-          role: 'system',
-          content: prompt,
-        },
-        {
-          role: 'user',
-          content: distilledQuestion,
-        },
-      ])
+      const sqlQueryResponse = await createCompletion(
+        [
+          {
+            role: 'system',
+            content: prompt,
+          },
+          {
+            role: 'user',
+            content: distilledQuestion,
+          },
+        ],
+        false
+      )
       clearInterval(typingHandle)
 
       const plan = sqlQueryResponse.choices?.[0].message?.content

@@ -33,25 +33,29 @@ const worker = new Worker(
         thread.sendTyping()
       }, 8000)
 
-      const sqlQueryResponse = await createCompletion([
-        {
-          role: 'system',
-          content: prompt(distilledQuestion, plan, sql),
-        },
-        {
-          role: 'user',
-          content:
-            'Den här datan hittades av SQL-frågan: \n\n' +
-            JSON.stringify(results),
-        },
-      ])
+      const systemPrompt = prompt(results, plan, sql)
+      console.log('## MISTRAL PROMPT: ', systemPrompt, distilledQuestion)
+      const sqlQueryResponse = await createCompletion(
+        [
+          {
+            role: 'system',
+            content: systemPrompt,
+          },
+          {
+            role: 'user',
+            content: distilledQuestion,
+          },
+        ],
+        false,
+        256
+      )
       clearInterval(typingHandle)
 
       const answer = sqlQueryResponse.choices?.[0].message?.content
       console.log('## MISTRAL ANSWER: ', answer)
 
       if (answer) {
-        thread.send(answer)
+        await msg.edit(answer)
       } else {
         await msg.edit(msg.content + '\nKunde inte förstå frågan, försök igen')
       }

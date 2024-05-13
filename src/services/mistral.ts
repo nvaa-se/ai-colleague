@@ -11,10 +11,11 @@ type MistralMessage = {
 export const createCompletion = async (
   messages: MistralMessage[],
   json_mode = false,
-  max_tokens = 512
+  max_tokens = 512,
+  model = 'mistral-large-latest'
 ) => {
   const data: Record<string, any> = {
-    model: mistral.model,
+    model,
     messages,
     temperature: 0.7,
     top_p: 1,

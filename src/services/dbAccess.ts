@@ -23,7 +23,7 @@ const redisPrefixes = {
 const EXPIRY = 1440
 
 export const runQuery = async (query: string) => {
-  return await db.raw(query)
+  return db.raw(query)
 }
 
 export const getFacilityByStrAnlNr = async (strAnlNr: string) => {

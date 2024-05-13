@@ -1,4 +1,5 @@
-const prompt = `
+const sqlPrompt = (brokenSql, sqlError) => {
+  const initialPrompt = `
 I have a few internal systems that I need to query for an internal customer
 service bot. The bot gathers relevant information about a customer ahead of
 a call. These are some examples of the tables. Please return with a joined
@@ -27,7 +28,6 @@ The reply JSON structure should look like this, there must always be at least on
 
 SQL key is a string with the SQL query. paramsToReplace is an array of strings that should exist within the SQL query.
 The Database Server is running Microsoft SQL Server 2024.
-SELECT AS FEW FIELDS AS POSSIBLE TO REDUCE DATA TRANSFER SIZE.
 The software running the queries will replace param strings with actual values before executing the query.
 THE ONLY ACCEPTED PARAMETERS ARE: "strAnlNr".
 
@@ -73,10 +73,24 @@ intRecnum;strTaxekod;strTaxebenamning;strFakturagrupp;strProdukt;strDelProdukt;s
 
 ## table: vwanlaggning
 \`\`\`csv
-intRecnum;strAnlnr;intKundnr;strFornamn1;strEfternamn1;strFornamn2;strEfternamn2;intKundFakturaAdress;strAnlAdressgata;intAnlAdressnr;strAnlAdressbokstav;strPostnr;strAnlOrt;strFastbeteckningTrakt;strFastbeteckningBlock;strFastbeteckningTecken;intFastbeteckningEnhet;strPopularNamn;strFastnyckel;strFastighetsUuid;strAnlaggningsKategori;strForNamn;strEfterNamn;strTelefon;strTelefonArbete;strTelefonMobil;bolSMSOK;bolEpostOK;strEpostadress;strFakturaFrekvens;intFakturaadress;bolSeparatFaktura;intAgarekundnr;intAvlasningskortsadress;decAnlXkoordinat;decAnlYkoordinat;bolInterndebiteras;strMotpartKoncernkod;strDistriktsInfoExtra1;strDistriktsInfoExtra2;strDistriktsInfoExtra3;strVADistriktskodKomdel;strVADistriktskodStat;strVADistriktskodAvlas;strAvlasningsOrdningsNr;strVADistriktskodMatbyt;strMatarbytesOrdningsNr;strVADistriktskodVatror;strVADistriktskodVatror2;strVADistriktskodAvlror;strVADistriktskodAvlror2;strVADistriktskodVatverk;strVADistriktskodAvlverk;bolInternmoms;AnlKommunDistriktstyp;AnlStatDistriktstyp;AnlAvlasDistriktstyp;AnlMatbytDistriktstyp;AnlVatrorDistriktstyp;AnlAvlrorDistriktstyp;AnlVatverkDistriktstyp;AnlAvlverkDistriktstyp;AnlExtra1;AnlExtra2;AnlExtra3;strAnlAdressHel;strFastBeteckningHel;strKundNamnHel;decTotalArsforbrukning;strSpecialAdressHel;FaktAdr;strAnlReferens;strFakturagrupp;strFakturaSortering;intSpecialadressKontakt;strKommunkod;intUtskickadress;strExtraAnlaggning1;strExtraAnlaggning2;datBrevutskick;strArendeAnteckning;AnlDatSkapad;strAvvikandeDebiterasMoms;bolAnlAdrSomUtskicksAdr;AntTj;Prod;Bevakning;bolVarnaForKundManuell;strKreditBetyg;strNyckelnr;strPortkod;datUpphorddatum;intCFAR;bolOmbudAnteckning1;intTypkod;bolFAKommun
-28176;4212108221;171501;Testann;Testsson;NULL;NULL;NULL;Karlsängsvägen;29;NULL;76021;Vätö;Harg;25;:;2;NULL;1017059;NULL;SMÅHUS;NULL;NULL;+46708624190;+46707755831;+46709529036;0;0;NULL;NULL;NULL;0;NULL;NULL;6633104.90000000000000000000;204685.00000000000000000000;0;NULL;NULL;NULL;NULL;NULL;PERMFASTL;NULL;NULL;NULL;NULL;NULL;NULL;NULL;NULL;NULL;NULL;0;KOMDEL;STATOMR;AVLDISTR;MATBYT;VATRORNAT1;AVLRORNAT1;VATVERK;AVLVERK;EXTRA1;EXTRA2;EXTRA3;Karlsängsvägen 29;Harg 25:2;Testann Testsson;NULL;          ;;NULL;NULL;NULL;NULL;NULL;NULL;NULL;NULL;NULL;NULL;2009-11-12 12:13:03.477;NULL;0;4;RENH;;0;NULL;NULL;NULL;NULL;NULL;0;220;0
+intRecnum;strAnlnr;intKundnr;strFornamn1;strEfternamn1;strFornamn2;strEfternamn2;intKundFakturaAdress;strAnlAdressgata;intAnlAdressnr;strAnlAdressbokstav;strPostnr;strAnlOrt;strFastbeteckningTrakt;strFastbeteckningBlock;strFastbeteckningTecken;intFastbeteckningEnhet;strPopularNamn;strFastnyckel;strAnlaggningsKategori;strTelefon;strTelefonArbete;strTelefonMobil;bolSMSOK;bolEpostOK;bolSeparatFaktura;decAnlXkoordinat;decAnlYkoordinat;bolInterndebiteras;strVADistriktskodStat;bolInternmoms;AnlKommunDistriktstyp;AnlStatDistriktstyp;AnlAvlasDistriktstyp;AnlMatbytDistriktstyp;AnlVatrorDistriktstyp;AnlAvlrorDistriktstyp;AnlVatverkDistriktstyp;AnlAvlverkDistriktstyp;AnlExtra1;AnlExtra2;AnlExtra3;strAnlAdressHel;strFastBeteckningHel;strKundNamnHel;decTotalArsforbrukning;strSpecialAdressHel;FaktAdr;AnlDatSkapad;bolAnlAdrSomUtskicksAdr;AntTj;Prod;Bevakning;bolVarnaForKundManuell;bolOmbudAnteckning1;intTypkod;bolFAKommun
+28176;4212108221;171501;Testann;Testsson;NULL;NULL;NULL;Karlsängsvägen;29;NULL;76021;Vätö;Harg;25;:;2;NULL;1017059;SMÅHUS;46708624190;46707755831;46709529036;0;0;0;6633104.90000000000000000000;204685.00000000000000000000;0;PERMFASTL;0;KOMDEL;STATOMR;AVLDISTR;MATBYT;VATRORNAT1;AVLRORNAT1;VATVERK;AVLVERK;EXTRA1;EXTRA2;EXTRA3;Karlsängsvägen 29;Harg 25:2;Testann Testsson;NULL;          ;;2009-11-12 12:13:03.477;0;4;RENH;;0;0;220;0
 \`\`\`
-
 `
+  if (brokenSql && sqlError) {
+    return `
+      ${initialPrompt}
+      \`\`\`
+      ${brokenSql}
+      \`\`\`
 
-export default prompt
+      The above was generated with the follwing error message: "${sqlError}".
+
+      Please fix the SQL query based on the error above!
+    `
+  } else {
+    return initialPrompt
+  }
+}
+
+export default sqlPrompt

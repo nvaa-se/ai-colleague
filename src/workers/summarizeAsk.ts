@@ -1,10 +1,7 @@
 import { Worker, Job } from 'bullmq'
 import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
-import {
-  getFacilityThreadByThreadChannelId,
-  getThreadContents,
-} from '../services/dbAccess'
+import { getThreadContents } from '../services/dbAccess'
 import redis from '../config/redis'
 import { createCompletion } from '../services/mistral'
 import prompt from '../prompts/summarizeAsk'
