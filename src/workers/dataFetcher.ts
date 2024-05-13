@@ -55,7 +55,7 @@ const worker = new Worker(
         thread.sendTyping()
       }, 8000)
 
-      const json_mode = false
+      const tool_mode = true
       const systemPrompt = sqlPrompt(brokenSql, sqlError)
       const userPrompt = distilledQuestion + plan
       job.log('System prompt: ' + systemPrompt)
@@ -71,13 +71,9 @@ const worker = new Worker(
             content: userPrompt,
           },
         ],
-        json_mode
+        tool_mode
       )
       clearInterval(typingHandle)
-
-      const paramValues = {
-        strAnlNr,
-      }
 
       const sqlQuery = sqlQueryResponse.choices?.[0].message?.content
       job.log('mistral answer: ' + sqlQuery)
@@ -99,13 +95,7 @@ const worker = new Worker(
       } else {
         const { paramsToReplace } = parsed.data
         sql = parsed.data.sql
-        job.log('SQL: ' + sql)
-        paramsToReplace.forEach((param) => {
-          sql = sql.replace(param.placeholder, paramValues[param.param])
-        })
-        job.log('SQL med parametrar: ' + sql)
         msg.edit(msg.content + '\nKör databasfrågor...')
-        console.log('RUNNING THIS SQL:\n\n\n', sql, '\n\n\n')
         job.log('Kör databasfrågor...')
         let results = []
         try {
@@ -116,12 +106,11 @@ const worker = new Worker(
           clearInterval(typingHandle)
           console.log('ERROR:', error)
           msg.edit('Fel vid databasfrågor')
-          dataFetcher.add('dataFetcher in thread ' + threadChannelId, {
+          job.updateData({
             threadChannelId,
-            msgId,
-            strAnlNr,
             distilledQuestion,
             plan,
+            results: 'Fel vid databasfrågor',
             brokenSql: sql,
             sqlError: error.message,
           })

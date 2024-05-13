@@ -1,40 +1,20 @@
 const sqlPrompt = (brokenSql, sqlError) => {
   const initialPrompt = `
 I have a few internal systems that I need to query for an internal customer
-service bot. The bot gathers relevant information about a customer ahead of
-a call. These are some examples of the tables. Please return with a joined
-query that fetches most relevant information from each table for a given phone
-number.
+service bot. The bot gathers relevant information about a customer.
 
-Parameter name is "strAnlNr" in the facilities table. This is the same as the
-"strAnlnr" in the customer_events table. Put the value of strAnlNr in the
-SQL query as a parameter.
+You have some tools available at your disposal to help you with this task. The tools are:
+- exectueSQL: You can run the query by calling the executeSQL tool function with a SQL query as parameter
+In the SQL Query, always use column name "strAnlNr" in the facilities table to join to the correct customer facility.
+This is the same as the column "strAnlnr" in the customer_events table. Put the value of strAnlNr in the SQL query as a parameter.
 
-Reply in a JSON structure with the SQL query  that fetches the relevant information. It is very
-important that your response only includes the valid SQL, no comments or other text.
-Also, do not create aliases for columns. And do not rename fields, they have
-to be exactly the same as in the examples below.
-
-The reply JSON structure should look like this, there must always be at least one parameter to replace:
-
-\`\`\`
-{
-  "sql": "SELECT ... FROM ... WHERE ... f.strAnlnr='???strAnlNr???' ...",
-  "paramsToReplace": [
-    { "param": "strAnlNr", "placeholder": "???strAnlNr???" }
-  ]
-}
-\`\`\`
-
-SQL key is a string with the SQL query. paramsToReplace is an array of strings that should exist within the SQL query.
 The Database Server is running Microsoft SQL Server 2024.
-The software running the queries will replace param strings with actual values before executing the query.
-THE ONLY ACCEPTED PARAMETERS ARE: "strAnlNr".
-
 SORT DATA AS LATEST FIRST unless the user asks otherwise
+MAKE SURE THE RESPONSE IS VALID SQL!
 
-ANSWER ONLY WITH THE JSON STRUCTURE, NO MARKDOWN! NO COMMENTS! OR OTHER TEXT!
-MAKE SURE THE RESPONSE IS VALID JSON AND VALID SQL!
+Only filter tbFuHandlese by "strAnlNr", as strAnlNr is the only indexed column. Never filter by date, sort the data by date and return the latest X rows.
+
+This is example data from the tables in csv format, delimited with ;
 
 ## table: tbFuHandelse
 \`\`\`csv
@@ -42,11 +22,6 @@ recHandelse;intKundnr;strAnlnr;intTjanstnr;datDatumFrom;datDatumTom;strTaxekod;s
 9244599;171501;4212108221;370791;2021-07-29 18:07:00.000;2021-07-29 18:07:00.000;1WC0-2;NULL;404;NULL;NULL;NULL;81106327;ENFAKTKÖRN;1;0;0;DKLBC;446192;1;Slam;2021-07-29 18:11:03.710;174;MTÖM;1;7/31/21 0:00;NULL;2376228;0;SL4;0;6633076.51202581000000000000;204687.12685986900000000000;2021-07-29 00:00:00.000
 9244600;171501;4212108221;370791;2021-07-29 18:07:00.000;2021-07-29 18:07:00.000;2EXSLANG22;NULL;404;NULL;NULL;NULL;81106327;ENFAKTKÖRN;1;0;0;DKLBC;446192;2;Slam;2021-07-29 18:11:03.727;174;DEBI;NULL;7/31/21 0:00;NULL;2376228;0;SL4;0;6633076.51202581000000000000;204687.12685986900000000000;2021-07-29 00:00:00.000
 11176388;171501;4212108221;510310;2022-07-27 16:49:00.000;2022-07-27 16:49:00.000;1WC3-4;NULL;101;NULL;NULL;NULL;81332646;ENFAKTKÖRN;1;0;0;DKLBC;489891;1;Slam;2022-07-27 16:51:03.113;174;MTÖM;1;7/31/22 0:00;NULL;4291394;0;NULL;0;6633081.68324143000000000000;204685.17979671200000000000;2022-07-27 00:00:00.000
-11176389;171501;4212108221;510310;2022-07-27 16:49:00.000;2022-07-27 16:49:00.000;2EXSLANG22;NULL;101;NULL;NULL;NULL;81332646;ENFAKTKÖRN;1;0;0;DKLBC;489891;2;Slam;2022-07-27 16:51:03.130;174;DEBI;NULL;7/31/22 0:00;NULL;4291394;0;NULL;0;6633081.68324143000000000000;204685.17979671200000000000;2022-07-27 00:00:00.000
-13224554;171501;4212108221;510310;2023-07-28 08:57:00.000;2023-07-28 08:57:00.000;1WC3-4;NULL;101;NULL;NULL;NULL;81560209;ENFAKTKÖRN;1;0;0;DKLBC;532957;1;Slam;2023-07-28 09:01:29.807;174;MTÖM;1;7/31/23 0:00;NULL;6392936;0;SL 101;0;6633079.14438582000000000000;204689.33340857900000000000;2023-07-28 00:00:00.000
-13224555;171501;4212108221;510310;2023-07-28 08:57:00.000;2023-07-28 08:57:00.000;2EXSLANG;NULL;101;NULL;NULL;NULL;81560209;ENFAKTKÖRN;1;0;0;DKLBC;532957;2;Slam;2023-07-28 09:01:29.823;174;DEBI;NULL;7/31/23 0:00;NULL;6392936;0;SL 101;0;6633079.14438582000000000000;204689.33340857900000000000;2023-07-28 00:00:00.000
-9035470;171501;4212108221;495219;2021-06-28 11:19:37.000;NULL;M140-26Å;08887EF0FF;HH01;H195;HSIT1D1;CriHam;NULL;ENFAKTKÖRN;0;0;1;HUSH_3;NULL;NULL;NULL;2021-06-28 11:31:09.287;174;AVVI;NULL;6/30/21 0:00;NULL;2168465;0;NULL;1;6633067.63018517000000000000;204701.94514716200000000000;2021-06-28 00:00:00.000
-9035478;171501;4212108221;313848;2021-06-28 11:17:44.000;NULL;R190-26Å;08013F6232;HH01;NULL;HSIT1D1;CriHam;NULL;ENFAKTKÖRN;1;0;1;HUSH_3;NULL;NULL;Restavfall;2021-06-28 11:31:12.333;174;TÖMN;NULL;6/30/21 0:00;NULL;2168473;0;3;0;6633067.63156060000000000000;204702.03867924600000000000;2021-06-28 00:00:00.000
 9035479;171501;4212108221;504470;2021-06-28 11:17:44.000;NULL;R190-26Å;08887E326E;HH01;NULL;HSIT1D1;CriHam;NULL;ENFAKTKÖRN;1;0;1;HUSH_3;NULL;NULL;Restavfall;2021-06-28 11:31:12.550;174;TÖMN;NULL;6/30/21 0:00;NULL;2168474;0;3;0;6633067.63156060000000000000;204702.03867924600000000000;2021-06-28 00:00:00.000
 
 \`\`\`
@@ -84,9 +59,10 @@ intRecnum;strAnlnr;intKundnr;strFornamn1;strEfternamn1;strFornamn2;strEfternamn2
       ${brokenSql}
       \`\`\`
 
-      The above was generated with the follwing error message: "${sqlError}".
+      The above query was generated with the follwing error message:
+       "${sqlError}".
 
-      Please fix the SQL query based on the error above!
+      Please fix the SQL query based on the error!
     `
   } else {
     return initialPrompt
