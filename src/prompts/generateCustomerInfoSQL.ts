@@ -1,19 +1,31 @@
 const sqlPrompt = (brokenSql, sqlError) => {
   const initialPrompt = `
 I have a few internal systems that I need to query for an internal customer
-service bot. The bot gathers relevant information about a customer ahead of
-a call. These are some examples of the tables. Please return with a joined
-query that fetches most relevant information from each table for a given phone
-number.
+service bot. The bot gathers relevant information about a customer.
 
-Parameter name is "strAnlNr" in the facilities table. This is the same as the
-"strAnlnr" in the customer_events table. Put the value of strAnlNr in the
+You have some tools available at your disposal to help you with this task. The tools are:
+- exectueSQL: You can run the query by calling the executeSQL tool function with a T-SQL query as parameter
+In the T-SQL Query, always use column name 'strAnlNr' in the facilities table to join to the correct customer facility.
+This is the same as the column 'strAnlnr' in the customer_events table. Put the value of strAnlNr in the SQL query as a parameter.
+
+The Database Server is running Microsoft SQL Server 2024.
+SORT DATA AS LATEST FIRST unless the user asks otherwise
+MAKE SURE THE RESPONSE IS VALID T-SQL!
+
+Only filter tbFuHandlese by 'strAnlNr', as strAnlNr is the only indexed column. Never filter by date, sort the data by date and return the latest X rows.
+
+This is example data from the tables in csv format, delimited with ;
+
+Parameter name is 'strAnlNr' in the facilities table. This is the same as the
+'strAnlnr' in the customer_events table. Put the value of strAnlNr in the
 T-SQL query as a parameter.
 
 Reply in a JSON structure with the T-SQL query  that fetches the relevant information. It is very
 important that your response only includes the valid T-SQL, no comments or other text.
 Do not create aliases for columns, MAKE THE T-SQL AS SHORT AS POSSIBLE.
 Do not list unneccesary columns, only the ones needed!
+
+Only JOIN tables you need to get the data you need. Do not JOIN tables that are not needed.
 
 The reply JSON structure should look like this, there must always be at least one parameter to replace:
 
@@ -283,9 +295,10 @@ CREATE TABLE tbFuAnlaggning (
       ${brokenSql}
       \`\`\`
 
-      The above was generated with the follwing error message: "${sqlError}".
+      The above query was generated with the follwing error message:
+       "${sqlError}".
 
-      Please fix the SQL query based on the error above!
+      Please fix the SQL query based on the error!
     `
   } else {
     return initialPrompt
