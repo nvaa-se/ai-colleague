@@ -11,17 +11,18 @@ export default {
     .setName('samtal')
     .addStringOption((option) =>
       option
-        .setName('telefonnummer')
+        .setName('anläggningsnummer')
         .setDescription('inkommande ringare')
         .setRequired(true)
     )
     .setDescription(
-      'Skicka in kundens telefonnummer och få tillbaka en bra kundbild.'
+      'Skicka in kundens anläggningsnummer och få tillbaka en bra kundbild.'
     ),
 
   async execute(interaction: ChatInputCommandInteraction<CacheType>) {
-    console.log('samtal')
-    const telefonnummer = interaction.options.getString('telefonnummer')
+    const strAnlNr = interaction.options.getString('anläggningsnummer')
+    console.log('samtal', strAnlNr)
+
     /*    if (!telefonnummer) {
       await interaction.reply({
         content:
@@ -46,14 +47,14 @@ export default {
       .replace(/[\s-]/g, "");
 */
     const reply = await interaction.reply({
-      content: `Tack! Snart kommer det information om din inringare (${telefonnummer}).`,
+      content: `Tack! Snart kommer det information om din inringare (${strAnlNr}).`,
       fetchReply: true,
     })
     const channelId = interaction.channelId
     const messageId = reply.id
 
-    handleCommandSamtal.add('handleCommandSamtal ' + telefonnummer, {
-      phoneNumber: telefonnummer,
+    handleCommandSamtal.add('handleCommandSamtal ' + strAnlNr, {
+      strAnlNr,
       channelId,
       messageId,
     })

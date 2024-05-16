@@ -5,12 +5,12 @@ import { TextChannel } from 'discord.js'
 import {
   addReplyToThread,
   addThread,
-  getFacilityByPhone,
+  getFacilityByStrAnlNr,
 } from '../services/dbAccess'
 
 class JobData extends Job {
   data: {
-    phoneNumber: string
+    strAnlNr: string
     channelId: string
     messageId: string
   }
@@ -19,20 +19,20 @@ class JobData extends Job {
 const worker = new Worker(
   'handleCommandSamtal',
   async (job: JobData) => {
-    const { phoneNumber, channelId, messageId } = job.data
-    job.log(`Getting based on phoneNumber: ${phoneNumber}`)
+    const { strAnlNr, channelId, messageId } = job.data
+    job.log(`Getting based on strAnlNr: ${strAnlNr}`)
     const channel = (await discord.channel(channelId)) as TextChannel
     const message = await channel?.messages?.fetch(messageId)
     if (message) await message.edit(`Söker efter telefonummer...`)
 
     try {
-      const possibleCustomers = await getFacilityByPhone(phoneNumber)
+      const possibleCustomers = await getFacilityByStrAnlNr(strAnlNr)
       if (possibleCustomers.length === 0) {
         message.edit(
-          `Ingen anläggning hittades med telefonnummer(${phoneNumber})`
+          `Ingen anläggning hittades med anläggningsnummer (${strAnlNr})`
         )
       } else if (possibleCustomers.length === 1) {
-        const initialResponse = `1 anläggning hittades med telefonnummer(${phoneNumber})`
+        const initialResponse = `1 anläggning hittades med anläggningsnummer (${strAnlNr})`
         message.edit(initialResponse)
         // const fullCustomerInfo = await getFullCustomerInfo(possibleCustomers[0].intRecnum)
         const threadStart = new Date()
@@ -60,7 +60,7 @@ Fastighetsbeteckning: \`${possibleCustomers[0].strFastBeteckningHel}\`
 KundNummer: \`${possibleCustomers[0].intKundnr}\`
 Anläggningsnummer: \`${possibleCustomers[0].strAnlnr}\``
 
-        await addThread(thread.id, possibleCustomers[0].intRecnum)
+        await addThread(thread.id, possibleCustomers[0].strAnlnr)
         await addReplyToThread(thread.id, reply)
         const res = await thread.send(reply)
       } else {
@@ -78,10 +78,10 @@ Anläggningsnummer: \`${possibleCustomers[0].strAnlnr}\``
     } catch (error) {
       if (message)
         await message.edit(
-          `Fel vid kundsökning med telefonnummer(${phoneNumber}): ${error.message}`
+          `Fel vid kundsökning med telefonnummer(${strAnlNr}): ${error.message} ${error.stack}`
         )
       job.log(
-        `Fel vid kundsökning med telefonnummer(${phoneNumber}): ${error.message}`
+        `Fel vid kundsökning med telefonnummer(${strAnlNr}): ${error.message} ${error.stack}`
       )
       throw error
     }

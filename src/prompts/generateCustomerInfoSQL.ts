@@ -1,13 +1,12 @@
-const prompt = `
+const sqlPrompt = (brokenSql, sqlError) => {
+  const initialPrompt = `
 I have a few internal systems that I need to query for an internal customer
-service bot. The bot gathers relevant information about a customer ahead of
-a call. These are some examples of the tables. Please return with a joined
-query that fetches most relevant information from each table for a given phone
-number.
+service bot. The bot gathers relevant information about a customer.
 
-Parameter name is "strAnlNr" in the facilities table. This is the same as the
-"strAnlnr" in the customer_events table. Put the value of strAnlNr in the
-SQL query as a parameter.
+You have some tools available at your disposal to help you with this task. The tools are:
+- exectueSQL: You can run the query by calling the executeSQL tool function with a SQL query as parameter
+In the SQL Query, always use column name "strAnlNr" in the facilities table to join to the correct customer facility.
+This is the same as the column "strAnlnr" in the customer_events table. Put the value of strAnlNr in the SQL query as a parameter.
 
 The Database Server is running Microsoft SQL Server 2024.
 SORT DATA AS LATEST FIRST unless the user asks otherwise
@@ -276,7 +275,22 @@ CREATE TABLE tbFuAnlaggning (
 	CONSTRAINT PKtbFuAnlaggning PRIMARY KEY (strAnlnr)
 );
 \`\`\`
-
 `
+  if (brokenSql && sqlError) {
+    return `
+      ${initialPrompt}
+      \`\`\`
+      ${brokenSql}
+      \`\`\`
 
-export default prompt
+      The above query was generated with the follwing error message:
+       "${sqlError}".
+
+      Please fix the SQL query based on the error!
+    `
+  } else {
+    return initialPrompt
+  }
+}
+
+export default sqlPrompt
