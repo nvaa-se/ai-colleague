@@ -46,8 +46,7 @@ const worker = new Worker(
             content: distilledQuestion,
           },
         ],
-        false,
-        256
+        { max_tokens: 256 }
       )
       clearInterval(typingHandle)
 

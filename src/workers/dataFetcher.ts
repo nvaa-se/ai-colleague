@@ -6,8 +6,8 @@ import { runQuery } from '../services/dbAccess'
 import redis from '../config/redis'
 import { createCompletion } from '../services/mistral'
 import sqlPrompt from '../prompts/generateCustomerInfoSQL'
-import { answerQuestion, dataFetcher } from '../queues'
-import { resultToCsv } from '../lib/resultToCsv'
+import { answerQuestion } from '../queues'
+
 class JobData extends Job {
   data: {
     threadChannelId: string
@@ -55,12 +55,11 @@ const worker = new Worker(
         thread.sendTyping()
       }, 8000)
 
-      const json_mode = true
       const systemPrompt = sqlPrompt(brokenSql, sqlError)
       const userPrompt = distilledQuestion + plan
-      job.log('System prompt: ' + systemPrompt)
-      job.log('User prompt: ' + userPrompt)
-      const sqlQueryResponse = await createCompletion(
+      // console.log('System prompt: ' + systemPrompt)
+      // console.log('User prompt: ' + userPrompt)
+      const results = await createCompletion(
         [
           {
             role: 'system',
@@ -71,93 +70,96 @@ const worker = new Worker(
             content: userPrompt,
           },
         ],
-        json_mode
+        {
+          replyMode: 'function',
+        }
       )
       clearInterval(typingHandle)
 
-      const paramValues = {
-        strAnlNr,
-      }
+      console.log(JSON.stringify(results, null, 2))
 
-      const sqlQuery = sqlQueryResponse.choices?.[0].message?.content
-      job.log('mistral answer: ' + sqlQuery)
-      await msg.edit('Verifierar databasfrågor...')
-      console.log('## MISTRAL DATAFETCHER: ', sqlQuery, '###')
+      // const sqlQuery = sqlQueryResponse.choices?.[0].message?.content
+      // job.log('mistral answer: ' + sqlQuery)
+      // await msg.edit('Verifierar databasfrågor...')
+      // console.log('## MISTRAL DATAFETCHER: ', sqlQuery, '###')
 
-      const json = JSON.parse(sqlQuery)
-      console.log('JSON: ', json)
-      const parsed = queryStruct.safeParse(json)
-      let sql = ''
-      job.log('Korrekt formaterat svar: ' + parsed.success)
-      if (!parsed.success) {
-        if (job.attemptsMade < 3) {
-          msg.edit('AI genererade en felaktig SQL-fråga, försöker igen')
-        } else {
-          msg.edit('AI genererade en felaktig SQL-fråga, slutar försöka igen')
-        }
-        throw new Error(String(parsed.error))
-      } else {
-        const { paramsToReplace } = parsed.data
-        sql = parsed.data.sql
-        job.log('SQL: ' + sql)
-        paramsToReplace.forEach((param) => {
-          if (param.param.startsWith('str')) {
-            sql = sql.replace(param.placeholder, paramValues[param.param])
-          } else {
-            console.error(
-              "ERROR: param name doesn't start with 'str' in dataFetcher"
-            )
-          }
+      // const json = JSON.parse(sqlQuery)
+      // console.log('JSON: ', json)
+      // const parsed = queryStruct.safeParse(json)
+      // let sql = ''
+      // job.log('Korrekt formaterat svar: ' + parsed.success)
+      // if (!parsed.success) {
+      //   if (job.attemptsMade < 3) {
+      //     msg.edit('AI genererade en felaktig SQL-fråga, försöker igen')
+      //   } else {
+      //     msg.edit('AI genererade en felaktig SQL-fråga, slutar försöka igen')
+      //   }
+      //   throw new Error(String(parsed.error))
+      // } else {
+      // const { paramsToReplace } = parsed.data
+      // sql = parsed.data.sql
+      // job.log('SQL: ' + sql)
+      // paramsToReplace.forEach((param) => {
+      //   if (param.param.startsWith('str')) {
+      //     sql = sql.replace(param.placeholder, paramsToReplace[param.param])
+      //   } else {
+      //     console.error(
+      //       "ERROR: param name doesn't start with 'str' in dataFetcher"
+      //     )
+      //   }
+      // })
+      // job.log('SQL med parametrar: ' + sql)
+      // msg.edit(msg.content + '\nKör databasfrågor...')
+      // job.log('Kör databasfrågor...')
+      // let results = []
+      // try {
+      //   // WAYS TO VALIDATE SQL:
+      //   // 1. Run an explain plan on it.
+      //   // 2. If the statement allows it (harder on a union), add an additional where clause 1=0.
+      //   //    (Technically you are running it, but it will terminate really fast)
+      //   // 3. Similar to 2: encapsulate your query as select * from (your query) where 1=2
+      //   // 4. Run the query with a limit 0
+
+      //   results = await runQuery(sql)
+      //   job.log('SQL-Resultat: ' + JSON.stringify(results))
+      // } catch (error) {
+      //   job.log('Fel vid databasfrågor' + error.message)
+      //   clearInterval(typingHandle)
+      //   console.log('ERROR:', error)
+      //   msg.edit('Fel vid databasfrågor')
+      //   job.updateData({
+      //     threadChannelId,
+      //     distilledQuestion,
+      //     plan,
+      //     results: 'Fel vid databasfrågor',
+      //     brokenSql: sql,
+      //     sqlError: error.message,
+      //   })
+      //   return
+      // }
+      if (results && results.length === 0) {
+        msg.edit('Inga resultat hittades')
+        answerQuestion.add('answer in thread ' + threadChannelId, {
+          threadChannelId,
+          msgId,
+          strAnlNr,
+          distilledQuestion,
+          plan,
+          results: 'Inga resultat hittades från databasen',
         })
-        job.log('SQL med parametrar: ' + sql)
-        msg.edit(msg.content + '\nKör databasfrågor...')
-        console.log('RUNNING THIS SQL:\n\n\n', sql, '\n\n\n')
-        job.log('Kör databasfrågor...')
-        let results = []
-        try {
-          results = await runQuery(sql)
-          job.log('SQL-Resultat: ' + JSON.stringify(results))
-        } catch (error) {
-          job.log('Fel vid databasfrågor' + error.message)
-          clearInterval(typingHandle)
-          console.log('ERROR:', error)
-          msg.edit('Fel vid databasfrågor')
-          dataFetcher.add('dataFetcher in thread ' + threadChannelId, {
-            threadChannelId,
-            msgId,
-            strAnlNr,
-            distilledQuestion,
-            plan,
-            brokenSql: sql,
-            sqlError: error.message,
-          })
-          return
-        }
-        if (results.length === 0) {
-          msg.edit('Inga resultat hittades')
-          answerQuestion.add('answer in thread ' + threadChannelId, {
-            threadChannelId,
-            msgId,
-            strAnlNr,
-            distilledQuestion,
-            plan,
-            sql,
-            results: 'Inga resultat hittades från databasen',
-          })
-        } else {
-          msg.edit('Översätter resultat...')
-          answerQuestion.add('answer in thread ' + threadChannelId, {
-            threadChannelId,
-            msgId,
-            strAnlNr,
-            distilledQuestion,
-            plan,
-            sql,
-            results: JSON.stringify(results, null, 2),
-          })
-        }
-        return { sql, distilledQuestion, plan, results }
+      } else {
+        msg.edit('Översätter resultat...')
+        answerQuestion.add('answer in thread ' + threadChannelId, {
+          threadChannelId,
+          msgId,
+          strAnlNr,
+          distilledQuestion,
+          plan,
+          results: JSON.stringify(results, null, 2),
+        })
       }
+      return { distilledQuestion, plan, results }
+      // }
     } catch (error) {
       clearInterval(typingHandle)
       console.error(`Fel vid dataFetcher för tråd ${threadChannelId}`, error)
