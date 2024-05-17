@@ -5,7 +5,6 @@ import express from 'express'
 import { createBullBoard } from '@bull-board/api'
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { ExpressAdapter } from '@bull-board/express'
-import db from './services/db'
 import discord from './services/discord'
 import {
   handleCommandSamtal,
@@ -16,6 +15,7 @@ import {
   answerQuestion,
 } from './queues'
 import * as workers from './workers'
+import { runQuery } from './services/dbAccess'
 
 // start workers
 Object.values(workers).forEach((worker) => worker.run())
@@ -46,12 +46,18 @@ discord.login()
 
 app.use('/admin/queues', serverAdapter.getRouter())
 const port = process.env.PORT || 3000
-db.init().then(async () => {
-  app.listen(port, () => {
-    console.log(`Running on ${port}...`)
-    console.log(`For the UI, open http://localhost:${port}/admin/queues`)
+runQuery('SELECT 1')
+  .then(() => {
+    console.log('Connected to DB')
+    app.listen(port, () => {
+      console.log(`Running on ${port}...`)
+      console.log(`For the UI, open http://localhost:${port}/admin/queues`)
+    })
   })
-})
+  .catch((err) => {
+    console.error('Failed to connect to DB', err)
+  })
+
 app.get('/', (req, res) => {
   res.send(`Hej! Jag är din nya AI-kollega!`)
 })
