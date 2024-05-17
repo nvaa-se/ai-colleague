@@ -140,7 +140,6 @@ flowchart TB
     end
     subgraph dataFetcher
         direction TB
-        NA
         D1 --> D2 --> D3 --SUCCESS--> D5
         D3 --FAIL--> D4 --> D3
     end
@@ -167,7 +166,7 @@ flowchart TB
     style LR color:#FFFFFF, stroke:#A41e11, fill:#A41e11
 
     %% Not implemented Style
-    style NA color:#FF0000, fill:#303a4b, stroke:#FF0000, stroke-width:4px, stroke-dasharray: 5, 5
+    %% style NA color:#FF0000, fill:#303a4b, stroke:#FF0000, stroke-width:4px, stroke-dasharray: 5, 5
 
     %% Mistral Style
     style LM color:#000000, stroke:#ff4900, fill:#ff7000

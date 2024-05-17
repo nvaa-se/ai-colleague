@@ -15,7 +15,9 @@ De första två meddelandena beskriver vem som är kunden och det sista
 och förklara hur du förstått den.
 Du ska inte svara på frågan, utan bara förklara vad du tror att frågan innebär.
 Skriv kort, koncist och exakt. Svara alltid på svenska. Nämn inte "kundtjänst"
-eller "kundtjänstmedarbetare". Börja ditt svar med "Frågan innebär:"
+eller "kundtjänstmedarbetare".
+
+Håll ditt svar KORT!
 `
 
 export default prompt

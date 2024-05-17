@@ -32,6 +32,7 @@ const worker = new Worker(
         const msg = await thread.send('Sparar frågan...')
         summarizeAsk.add('answer reply in thread ' + threadChannelId, {
           threadChannelId,
+          strAnlNr: threadModel.facilityRecnum,
           msgId: msg.id,
         })
       } else {

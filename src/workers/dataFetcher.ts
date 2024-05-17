@@ -1,86 +1,161 @@
 import { Worker, Job } from 'bullmq'
+import z from 'zod'
 import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
-import { getFacilityThreadByThreadChannelId } from '../services/dbAccess'
+import { runQuery } from '../services/dbAccess'
 import redis from '../config/redis'
 import { createCompletion } from '../services/mistral'
-import prompt from '../prompts/generateCustomerInfoSQL'
-// import { answerQuestion } from '../queues'
-
+import sqlPrompt from '../prompts/generateCustomerInfoSQL'
+import { answerQuestion, dataFetcher } from '../queues'
+import { resultToCsv } from '../lib/resultToCsv'
 class JobData extends Job {
   data: {
     threadChannelId: string
     msgId: string
+    strAnlNr: string
     distilledQuestion: string
     plan: string
+    brokenSql?: string
+    sqlError?: string
   }
 }
+
+const queryStruct = z.object({
+  sql: z.string(),
+  paramsToReplace: z.array(
+    z.object({
+      param: z.string(),
+      placeholder: z.string(),
+    })
+  ),
+})
 
 const worker = new Worker(
   'dataFetcher',
   async (job: JobData) => {
-    console.log('DATAFETCHER JOB: ', job.data)
-    const { threadChannelId, msgId, distilledQuestion, plan } = job.data
+    console.log(`DATAFETCHER JOB, Attempt #${job.attemptsMade}`, job.data)
+    job.log(`DATAFETCHER JOB, Attempt #${job.attemptsMade}` + job.data)
+    const {
+      threadChannelId,
+      distilledQuestion,
+      plan,
+      strAnlNr,
+      msgId,
+      brokenSql,
+      sqlError,
+    } = job.data
     let typingHandle: NodeJS.Timeout
     try {
       const thread = (await discord.channel(threadChannelId)) as TextChannel
-      const msg = await thread.send('Testkör planen i steg...')
-      const threadModel = await getFacilityThreadByThreadChannelId(
-        threadChannelId
-      )
-      if (threadModel) {
-        const { facilityRecnum } = threadModel
-        typingHandle = setInterval(() => {
-          thread.sendTyping()
-        }, 8000)
+      const msg = await thread.messages.fetch(msgId)
+      await msg.edit('Skapar databasfrågor')
+      job.log('Skapar databasfrågor')
 
-        const sqlQueryResponse = await createCompletion([
+      typingHandle = setInterval(() => {
+        thread.sendTyping()
+      }, 8000)
+
+      const json_mode = false
+      const systemPrompt = sqlPrompt(brokenSql, sqlError)
+      const userPrompt = distilledQuestion + plan
+      job.log('System prompt: ' + systemPrompt)
+      job.log('User prompt: ' + userPrompt)
+      const sqlQueryResponse = await createCompletion(
+        [
           {
             role: 'system',
-            content: prompt,
+            content: systemPrompt,
           },
           {
             role: 'user',
-            content: distilledQuestion + plan,
+            content: userPrompt,
           },
-        ])
-        clearInterval(typingHandle)
+        ],
+        json_mode
+      )
+      clearInterval(typingHandle)
 
-        const sqlQueries = sqlQueryResponse.choices?.[0].message?.content
-        console.log('## MISTRAL DATAFETCHER: ', sqlQueries)
-        msg.edit(msg.content + '\n\n`' + sqlQueries + '`')
-
-        if (sqlQueries) {
-          // RUN QUERIES
-          // const queries = sqlQueries.split('\n')
-          // const results = await Promise.all(
-          //   queries.map(async (query) => {
-          //     const result = await runQuery(query, facilityRecnum)
-          //     return result
-          //   })
-          // )
-          // answerQuestion.add('answerQuestion', {
-          //   threadChannelId,
-          //   msgId,
-          //   distilledQuestion,
-          //   plan,
-          //   data: results,
-          // })
-        } else {
-          msg.edit('Kunde inte förstå frågan, försök igen')
-        }
-      } else {
-        job.log(
-          'Kunde inte hitta tråd-koppling till facility, förmodligen timeout'
-        )
-        msg.edit(
-          'Den här konversationen har tagit för lång tid, börja om igen.'
-        )
+      const paramValues = {
+        strAnlNr,
       }
-      return 'fake text'
+
+      const sqlQuery = sqlQueryResponse.choices?.[0].message?.content
+      job.log('mistral answer: ' + sqlQuery)
+      await msg.edit('Verifierar databasfrågor...')
+      console.log('## MISTRAL DATAFETCHER: ', sqlQuery, '###')
+
+      const json = JSON.parse(sqlQuery)
+      console.log('JSON: ', json)
+      const parsed = queryStruct.safeParse(json)
+      let sql = ''
+      job.log('Korrekt formaterat svar: ' + parsed.success)
+      if (!parsed.success) {
+        if (job.attemptsMade < 3) {
+          msg.edit('AI genererade en felaktig SQL-fråga, försöker igen')
+        } else {
+          msg.edit('AI genererade en felaktig SQL-fråga, slutar försöka igen')
+        }
+        throw new Error(String(parsed.error))
+      } else {
+        const { paramsToReplace } = parsed.data
+        sql = parsed.data.sql
+        job.log('SQL: ' + sql)
+        paramsToReplace.forEach((param) => {
+          sql = sql.replace(param.placeholder, paramValues[param.param])
+        })
+        job.log('SQL med parametrar: ' + sql)
+        msg.edit(msg.content + '\nKör databasfrågor...')
+        console.log('RUNNING THIS SQL:\n\n\n', sql, '\n\n\n')
+        job.log('Kör databasfrågor...')
+        let results = []
+        try {
+          results = await runQuery(sql)
+          job.log('SQL-Resultat: ' + JSON.stringify(results))
+        } catch (error) {
+          job.log('Fel vid databasfrågor' + error.message)
+          clearInterval(typingHandle)
+          console.log('ERROR:', error)
+          msg.edit('Fel vid databasfrågor')
+          dataFetcher.add('dataFetcher in thread ' + threadChannelId, {
+            threadChannelId,
+            msgId,
+            strAnlNr,
+            distilledQuestion,
+            plan,
+            brokenSql: sql,
+            sqlError: error.message,
+          })
+          return
+        }
+        if (results.length === 0) {
+          msg.edit('Inga resultat hittades')
+          answerQuestion.add('answer in thread ' + threadChannelId, {
+            threadChannelId,
+            msgId,
+            strAnlNr,
+            distilledQuestion,
+            plan,
+            sql,
+            results: 'Inga resultat hittades från databasen',
+          })
+        } else {
+          msg.edit('Översätter resultat...')
+          const csv = resultToCsv(json)
+          answerQuestion.add('answer in thread ' + threadChannelId, {
+            threadChannelId,
+            msgId,
+            strAnlNr,
+            distilledQuestion,
+            plan,
+            sql,
+            results: csv,
+          })
+        }
+        return { sql, distilledQuestion, plan, results }
+      }
     } catch (error) {
       clearInterval(typingHandle)
-      job.log(`Fel vid answerReply för tråd ${threadChannelId}`)
+      job.log(`Fel vid dataFetcher för tråd ${threadChannelId}`)
       throw error
     }
   },
