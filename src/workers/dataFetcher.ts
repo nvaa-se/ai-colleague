@@ -6,8 +6,8 @@ import { runQuery } from '../services/dbAccess'
 import redis from '../config/redis'
 import { createCompletion } from '../services/mistral'
 import sqlPrompt from '../prompts/generateCustomerInfoSQL'
-import { answerQuestion, dataFetcher } from '../queues'
-import { resultToCsv } from '../lib/resultToCsv'
+import { answerQuestion } from '../queues'
+
 class JobData extends Job {
   data: {
     threadChannelId: string
@@ -55,12 +55,10 @@ const worker = new Worker(
         thread.sendTyping()
       }, 8000)
 
-      const json_mode = true
-      const tool_mode = true
       const systemPrompt = sqlPrompt(brokenSql, sqlError)
       const userPrompt = distilledQuestion + plan
-      job.log('System prompt: ' + systemPrompt)
-      job.log('User prompt: ' + userPrompt)
+      console.log('System prompt: ' + systemPrompt)
+      console.log('User prompt: ' + userPrompt)
       const sqlQueryResponse = await createCompletion(
         [
           {
@@ -73,10 +71,12 @@ const worker = new Worker(
           },
         ],
         {
-          replyMode: 'json'
+          replyMode: 'json',
         }
       )
       clearInterval(typingHandle)
+
+      console.log(JSON.stringify(sqlQueryResponse, null, 2))
 
       const sqlQuery = sqlQueryResponse.choices?.[0].message?.content
       job.log('mistral answer: ' + sqlQuery)
@@ -98,11 +98,10 @@ const worker = new Worker(
       } else {
         const { paramsToReplace } = parsed.data
         sql = parsed.data.sql
-<<<<<<< HEAD
         job.log('SQL: ' + sql)
         paramsToReplace.forEach((param) => {
           if (param.param.startsWith('str')) {
-            sql = sql.replace(param.placeholder, paramValues[param.param])
+            sql = sql.replace(param.placeholder, paramsToReplace[param.param])
           } else {
             console.error(
               "ERROR: param name doesn't start with 'str' in dataFetcher"
@@ -110,8 +109,6 @@ const worker = new Worker(
           }
         })
         job.log('SQL med parametrar: ' + sql)
-=======
->>>>>>> 2942c9e (Attempt function calling - NOT WORKING)
         msg.edit(msg.content + '\nKör databasfrågor...')
         job.log('Kör databasfrågor...')
         let results = []

@@ -1,6 +1,5 @@
-import axios from 'axios'
+import axios, { AxiosResponse } from 'axios'
 import mistral from '../config/mistral'
-import db from './db'
 import { runQuery } from './dbAccess'
 
 type MistralRole = 'system' | 'user' | 'assistant' | 'tool'
@@ -62,12 +61,13 @@ export const createCompletion = async (
     url: mistral.baseUrl + '/completions',
     headers: {
       Authorization: 'Bearer ' + mistral.apiKey,
+      'Content-type': 'text/plain',
     },
-    data,
+    data: JSON.stringify(data),
     timeout: 60000,
   }
 
-  let result = null
+  let result: AxiosResponse | null = null
   try {
     result = await axios(axiosOptions)
     const tool_calls = result?.data?.choices?.[0]?.message?.tool_calls || []
@@ -92,7 +92,9 @@ export const createCompletion = async (
     console.log('Mistral result', result.data)
     return result.data
   } catch (error) {
+    console.log('RESULT DATA', JSON.stringify(result?.data))
     console.log('Axios error', error)
+    return result.data
   }
 }
 
@@ -100,17 +102,19 @@ const tools = () => [
   {
     type: 'function',
     function: {
-      name: 'executeSQL',
-      description: 'Executes a SQL query towards the NVAA database',
+      name: 'exectueTSQL',
+      description:
+        'Executes a T-SQL query towards the customer database and returns the result',
       parameters: [
         {
           type: 'object',
           properties: {
             sql: {
               type: 'string',
-              description: 'The SQL query to execute',
+              description: 'The T-SQL query to execute',
             },
           },
+          required: ['sql'],
         },
       ],
     },
@@ -118,5 +122,5 @@ const tools = () => [
 ]
 
 export const toolBelt = {
-  executeSQL: runQuery,
+  exectueTSQL: runQuery,
 }
