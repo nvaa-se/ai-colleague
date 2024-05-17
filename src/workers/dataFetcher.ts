@@ -55,7 +55,7 @@ const worker = new Worker(
         thread.sendTyping()
       }, 8000)
 
-      const json_mode = false
+      const json_mode = true
       const systemPrompt = sqlPrompt(brokenSql, sqlError)
       const userPrompt = distilledQuestion + plan
       job.log('System prompt: ' + systemPrompt)
@@ -101,7 +101,13 @@ const worker = new Worker(
         sql = parsed.data.sql
         job.log('SQL: ' + sql)
         paramsToReplace.forEach((param) => {
-          sql = sql.replace(param.placeholder, paramValues[param.param])
+          if (param.param.startsWith('str')) {
+            sql = sql.replace(param.placeholder, paramValues[param.param])
+          } else {
+            console.error(
+              "ERROR: param name doesn't start with 'str' in dataFetcher"
+            )
+          }
         })
         job.log('SQL med parametrar: ' + sql)
         msg.edit(msg.content + '\nKör databasfrågor...')
@@ -140,7 +146,6 @@ const worker = new Worker(
           })
         } else {
           msg.edit('Översätter resultat...')
-          const csv = resultToCsv(json)
           answerQuestion.add('answer in thread ' + threadChannelId, {
             threadChannelId,
             msgId,
@@ -148,14 +153,15 @@ const worker = new Worker(
             distilledQuestion,
             plan,
             sql,
-            results: csv,
+            results: JSON.stringify(results, null, 2),
           })
         }
         return { sql, distilledQuestion, plan, results }
       }
     } catch (error) {
       clearInterval(typingHandle)
-      job.log(`Fel vid dataFetcher för tråd ${threadChannelId}`)
+      console.error(`Fel vid dataFetcher för tråd ${threadChannelId}`, error)
+      job.log(`Fel vid dataFetcher för tråd ${threadChannelId}` + error)
       throw error
     }
   },

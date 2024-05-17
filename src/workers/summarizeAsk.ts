@@ -33,7 +33,7 @@ const worker = new Worker(
 
       const partThread = JSON.stringify([
         fullThread[0],
-        fullThread[1],
+        // fullThread[1],
         fullThread[fullThread.length - 1],
       ])
 

@@ -8,13 +8,26 @@ number.
 
 Parameter name is "strAnlNr" in the facilities table. This is the same as the
 "strAnlnr" in the customer_events table. Put the value of strAnlNr in the
-SQL query as a parameter.
+T-SQL query as a parameter.
 
-Reply in a JSON structure with the SQL query  that fetches the relevant information. It is very
-important that your response only includes the valid SQL, no comments or other text.
-Do not create aliases for columns, and try to make the SQL as short as possible.
+Reply in a JSON structure with the T-SQL query  that fetches the relevant information. It is very
+important that your response only includes the valid T-SQL, no comments or other text.
+Do not create aliases for columns, MAKE THE T-SQL AS SHORT AS POSSIBLE.
+Do not list unneccesary columns, only the ones needed!
+
+The reply JSON structure should look like this, there must always be at least one parameter to replace:
 
 IMPORTANT! Do not rename fields! They have to be exactly the same as in the examples below!
+
+\`\`\`
+{
+  "sql": "SELECT ... FROM ... WHERE ... f.strAnlnr='???strAnlNr???' ...",
+  "paramsToReplace": [
+    { "param": "strAnlNr", "placeholder": "???strAnlNr???" }
+  ]
+}
+\`\`\`
+
 
 Below are the definitions of the relevant tables in the database
 
