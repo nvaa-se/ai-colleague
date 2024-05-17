@@ -10,7 +10,7 @@ ${plan}
 Och skrev följande sql för att hämta data:
 ${sql}
 
-Denna CSV-data blev resultatet
+Denna data blev resultatet
 \`\`\`
 ${data}
 \`\`\`
@@ -18,7 +18,7 @@ ${data}
 Svara på frågan!
 Svara kort och koncist på frågan, helst med max 2 meningar.
 Skriv kort, koncist och exakt. Svara alltid på svenska. Nämn inte "kundtjänst"
-eller "kundtjänstmedarbetare".
+eller "kundtjänstmedarbetare". ANVÄND DATA OVAN!!
 `
 
 export default prompt
