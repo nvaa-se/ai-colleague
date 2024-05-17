@@ -68,16 +68,24 @@ export const createCompletion = async (
   }
 
   let result: AxiosResponse | null = null
+  let result2: AxiosResponse | null = null
   try {
     result = await axios(axiosOptions)
     const tool_calls = result?.data?.choices?.[0]?.message?.tool_calls || []
     if (tool_calls.length > 0) {
-      console.log('Tool calls', tool_calls)
+      console.log('Tool calls!', tool_calls.length)
       const tool_results = {}
       for (const tool_call of tool_calls) {
         const tool = toolBelt[tool_call.function.name]
         if (tool) {
-          const result = await tool(...tool_call.function.arguments)
+          console.log(
+            `Calling tool ${tool_call.function.name} with arguments ${
+              JSON.stringify(tool_call.function.arguments, null, 2).split(
+                '\n'
+              )[0]
+            }`
+          )
+          result2 = await tool(...tool_call.function.arguments)
           tool_results[tool_call.function.name] = result
         }
       }
@@ -89,12 +97,11 @@ export const createCompletion = async (
         },
       ])
     }
-    console.log('Mistral result', result.data)
     return result.data
   } catch (error) {
-    console.log('RESULT DATA', JSON.stringify(result?.data))
+    console.log('Error DATA', JSON.stringify(result?.data))
     console.log('Axios error', error)
-    return result.data
+    return result?.data
   }
 }
 
@@ -105,18 +112,16 @@ const tools = () => [
       name: 'exectueTSQL',
       description:
         'Executes a T-SQL query towards the customer database and returns the result',
-      parameters: [
-        {
-          type: 'object',
-          properties: {
-            sql: {
-              type: 'string',
-              description: 'The T-SQL query to execute',
-            },
+      parameters: {
+        type: 'object',
+        properties: {
+          sql: {
+            type: 'string',
+            description: 'The T-SQL query to execute',
           },
-          required: ['sql'],
         },
-      ],
+        required: ['sql'],
+      },
     },
   },
 ]
