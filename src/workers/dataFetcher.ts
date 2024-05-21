@@ -22,12 +22,6 @@ class JobData extends Job {
 
 const queryStruct = z.object({
   sql: z.string(),
-  // paramsToReplace: z.array(
-  //   z.object({
-  //     param: z.string(),
-  //     placeholder: z.string(),
-  //   })
-  // ),
 })
 
 const worker = new Worker(
@@ -68,8 +62,6 @@ const worker = new Worker(
         try {
           let attempt = ` försök ${queryGenerationAttempts + 1}/${attemptLimit}`
           let systemPrompt = sqlPrompt(brokenSql, sqlError)
-          // console.log('System prompt: ' + systemPrompt)
-          // console.log('User prompt: ' + userPrompt)
 
           await msg.edit(`Skapar databasfrågor... ${attempt}`)
           const sqlQueryJsonResponse = await createCompletion(
