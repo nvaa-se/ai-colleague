@@ -7,7 +7,7 @@ import redis from '../config/redis'
 import { createCompletion } from '../services/mistral'
 import sqlPrompt from '../prompts/generateCustomerInfoSQL'
 import { answerQuestion, dataFetcher } from '../queues'
-import { resultToCsv } from '../lib/resultToCsv'
+
 class JobData extends Job {
   data: {
     threadChannelId: string
@@ -22,146 +22,167 @@ class JobData extends Job {
 
 const queryStruct = z.object({
   sql: z.string(),
-  paramsToReplace: z.array(
-    z.object({
-      param: z.string(),
-      placeholder: z.string(),
-    })
-  ),
+  // paramsToReplace: z.array(
+  //   z.object({
+  //     param: z.string(),
+  //     placeholder: z.string(),
+  //   })
+  // ),
 })
 
 const worker = new Worker(
   'dataFetcher',
   async (job: JobData) => {
     console.log(`DATAFETCHER JOB, Attempt #${job.attemptsMade}`, job.data)
-    job.log(`DATAFETCHER JOB, Attempt #${job.attemptsMade}` + job.data)
-    const {
-      threadChannelId,
-      distilledQuestion,
-      plan,
-      strAnlNr,
-      msgId,
-      brokenSql,
-      sqlError,
-    } = job.data
+    console.log(`DATAFETCHER JOB, Attempt #${job.attemptsMade}` + job.data)
+    const { threadChannelId, distilledQuestion, plan, strAnlNr, msgId } =
+      job.data
     let typingHandle: NodeJS.Timeout
     try {
       const thread = (await discord.channel(threadChannelId)) as TextChannel
       const msg = await thread.messages.fetch(msgId)
-      await msg.edit('Skapar databasfrågor')
-      job.log('Skapar databasfrågor')
+      console.log('Skapar databasfrågor')
 
       typingHandle = setInterval(() => {
         thread.sendTyping()
       }, 8000)
 
       const json_mode = true
-      const systemPrompt = sqlPrompt(brokenSql, sqlError)
-      const userPrompt = distilledQuestion + plan
-      job.log('System prompt: ' + systemPrompt)
-      job.log('User prompt: ' + userPrompt)
-      const sqlQueryResponse = await createCompletion(
-        [
-          {
-            role: 'system',
-            content: systemPrompt,
-          },
-          {
-            role: 'user',
-            content: userPrompt,
-          },
-        ],
-        json_mode
-      )
-      clearInterval(typingHandle)
-
-      const paramValues = {
-        strAnlNr,
-      }
-
-      const sqlQuery = sqlQueryResponse.choices?.[0].message?.content
-      job.log('mistral answer: ' + sqlQuery)
-      await msg.edit('Verifierar databasfrågor...')
-      console.log('## MISTRAL DATAFETCHER: ', sqlQuery, '###')
-
-      const json = JSON.parse(sqlQuery)
-      console.log('JSON: ', json)
-      const parsed = queryStruct.safeParse(json)
-      let sql = ''
-      job.log('Korrekt formaterat svar: ' + parsed.success)
-      if (!parsed.success) {
-        if (job.attemptsMade < 3) {
-          msg.edit('AI genererade en felaktig SQL-fråga, försöker igen')
-        } else {
-          msg.edit('AI genererade en felaktig SQL-fråga, slutar försöka igen')
+      let brokenSql = ''
+      let sqlError = ''
+      let userPrompt = distilledQuestion
+      let sql = undefined
+      let json = undefined
+      let results = []
+      let parsed: z.SafeParseReturnType<any, any> | undefined = undefined
+      let queryGenerationAttempts = 0
+      const attemptLimit = 10
+      while (!json || !parsed?.success) {
+        // ESCAPE LOOP IF TOO MANY ATTEMPTS
+        if (queryGenerationAttempts >= attemptLimit) {
+          msg.edit(`För många försök... kunde inte skapa en korrekt SQL-fråga`)
+          throw new Error('Too many attempts')
         }
-        throw new Error(String(parsed.error))
-      } else {
-        const { paramsToReplace } = parsed.data
-        sql = parsed.data.sql
-        job.log('SQL: ' + sql)
-        paramsToReplace.forEach((param) => {
-          if (param.param.startsWith('str')) {
-            sql = sql.replace(param.placeholder, paramValues[param.param])
-          } else {
-            console.error(
-              "ERROR: param name doesn't start with 'str' in dataFetcher"
+
+        // GENERATE SQL QUERY RESPONSE
+        try {
+          let attempt = ` försök ${queryGenerationAttempts + 1}/${attemptLimit}`
+          let systemPrompt = sqlPrompt(brokenSql, sqlError)
+          // console.log('System prompt: ' + systemPrompt)
+          // console.log('User prompt: ' + userPrompt)
+
+          await msg.edit(`Skapar databasfrågor... ${attempt}`)
+          const sqlQueryJsonResponse = await createCompletion(
+            [
+              {
+                role: 'system',
+                content: systemPrompt,
+              },
+              {
+                role: 'user',
+                content: userPrompt,
+              },
+            ],
+            json_mode
+          )
+          await msg.edit(`Verifierar databasfrågor... ${attempt}`)
+
+          // VERIFY VALID JSON
+          const sqlQueryJson =
+            sqlQueryJsonResponse.choices?.[0].message?.content
+          json = JSON.parse(sqlQueryJson)
+          console.log('JSON: ', json)
+
+          // EXTRACT SQL FROM JSON
+          parsed = queryStruct.safeParse(json)
+          if (!parsed?.success) {
+            msg.edit(`Felaktig JSON... ${attempt}`)
+            console.log('Felaktig JSON: ' + JSON.stringify(parsed.error))
+            userPrompt =
+              userPrompt +
+              '\n\nFelaktig JSON, försök igen: ' +
+              JSON.stringify(parsed.error) +
+              '\n\n' +
+              'JSONförsöket: \n' +
+              json
+            throw new Error('Felaktig JSON, försök igen')
+          }
+          sql = parsed.data.sql
+          console.log('SQL: ' + sql)
+
+          // VERIFY SQL CONTAINS PARAMETER STRANLNR
+          if (!sql.includes('@strAnlnr') && !sql.includes(strAnlNr)) {
+            throw new Error(
+              'SQL does not contain @strAnlnr or ' +
+                strAnlNr +
+                ' as a parameter: ' +
+                sql
             )
           }
-        })
-        job.log('SQL med parametrar: ' + sql)
-        msg.edit(msg.content + '\nKör databasfrågor...')
-        console.log('RUNNING THIS SQL:\n\n\n', sql, '\n\n\n')
-        job.log('Kör databasfrågor...')
-        let results = []
-        try {
-          results = await runQuery(sql)
-          job.log('SQL-Resultat: ' + JSON.stringify(results))
+
+          // REPLACE PARAMETER STRANLNR WITH ACTUAL VALUE
+          sql = sql.replaceAll('@strAnlnr', strAnlNr)
+          console.log('SQL med parametrar: ' + sql)
+          msg.edit(`Kör databasfrågor... ${attempt}`)
+          console.log('Kör databasfrågor...')
+          console.log('RUNNING THIS SQL:\n\n\n', sql, '\n\n\n')
+
+          // TEST SQL BY RUNNING QUERY IN SERVER
+          brokenSql = ''
+          sqlError = ''
+          try {
+            results = await runQuery(sql)
+            console.log('SQL-Resultat: ' + JSON.stringify(results))
+          } catch (error) {
+            // HANDLE SQL ERROR
+            sqlError = String(error)
+            brokenSql = sql
+            console.log('Fel vid databasfrågor' + sqlError)
+            msg.edit(`Fel vid databasfrågor... ${attempt}`)
+            throw new Error('Fel vid databasfrågor')
+          }
         } catch (error) {
-          job.log('Fel vid databasfrågor' + error.message)
-          clearInterval(typingHandle)
-          console.log('ERROR:', error)
-          msg.edit('Fel vid databasfrågor')
-          dataFetcher.add('dataFetcher in thread ' + threadChannelId, {
-            threadChannelId,
-            msgId,
-            strAnlNr,
-            distilledQuestion,
-            plan,
-            brokenSql: sql,
-            sqlError: error.message,
-          })
-          return
+          queryGenerationAttempts++
+          console.log('Fel vid databasfrågor: ' + error)
+          json = undefined
+          parsed = undefined
+          sql = undefined
+          results = []
         }
-        if (results.length === 0) {
-          msg.edit('Inga resultat hittades')
-          answerQuestion.add('answer in thread ' + threadChannelId, {
-            threadChannelId,
-            msgId,
-            strAnlNr,
-            distilledQuestion,
-            plan,
-            sql,
-            results: 'Inga resultat hittades från databasen',
-          })
-        } else {
-          msg.edit('Översätter resultat...')
-          answerQuestion.add('answer in thread ' + threadChannelId, {
-            threadChannelId,
-            msgId,
-            strAnlNr,
-            distilledQuestion,
-            plan,
-            sql,
-            results: JSON.stringify(results, null, 2),
-          })
-        }
-        return { sql, distilledQuestion, plan, results }
       }
+      clearInterval(typingHandle)
+      console.log('Klar med databasfrågor')
+      msg.edit(`Fått ett resultat från databasen...`)
+      if (results.length === 0) {
+        msg.edit(
+          'Hittade inga relevanta rader i databasen för SQL-frågan\n\n' + sql
+        )
+        answerQuestion.add('answer in thread ' + threadChannelId, {
+          threadChannelId,
+          msgId,
+          strAnlNr,
+          distilledQuestion,
+          plan,
+          sql,
+          results: 'Inga resultat hittades från databasen',
+        })
+      } else {
+        msg.edit('Översätter resultat...')
+        answerQuestion.add('answer in thread ' + threadChannelId, {
+          threadChannelId,
+          msgId,
+          strAnlNr,
+          distilledQuestion,
+          plan,
+          sql,
+          results: JSON.stringify(results, null, 2),
+        })
+      }
+      return { sql, distilledQuestion, plan, results }
     } catch (error) {
       clearInterval(typingHandle)
       console.error(`Fel vid dataFetcher för tråd ${threadChannelId}`, error)
-      job.log(`Fel vid dataFetcher för tråd ${threadChannelId}` + error)
+      console.log(`Fel vid dataFetcher för tråd ${threadChannelId}` + error)
       throw error
     }
   },

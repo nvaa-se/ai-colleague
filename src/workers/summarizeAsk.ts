@@ -5,7 +5,7 @@ import { getThreadContents } from '../services/dbAccess'
 import redis from '../config/redis'
 import { createCompletion } from '../services/mistral'
 import prompt from '../prompts/summarizeAsk'
-import { planAnswer } from '../queues'
+import { dataFetcher } from '../queues'
 
 class JobData extends Job {
   data: {
@@ -31,11 +31,28 @@ const worker = new Worker(
 
       const fullThread = await getThreadContents(threadChannelId)
 
+      console.log(
+        `\n\n#################\n${JSON.stringify(
+          fullThread,
+          null,
+          2
+        )}\n#################\n\n`
+      )
+
       const partThread = JSON.stringify([
-        fullThread[0],
-        // fullThread[1],
+        `Kundens anläggningsnummer (strAnlNr): ${strAnlNr}`,
+        `Kundens anläggningsnummer (strAnlNr): ${strAnlNr}`,
+        `Kundens anläggningsnummer (strAnlNr): ${strAnlNr}`,
         fullThread[fullThread.length - 1],
       ])
+
+      console.log(
+        `\n\n#################\n${JSON.stringify(
+          partThread,
+          null,
+          2
+        )}\n#################\n\n`
+      )
 
       const sqlQueryResponse = await createCompletion([
         {
@@ -53,7 +70,8 @@ const worker = new Worker(
       console.log('## MISTRAL SUMMARIZE: ', distilledQuestion)
 
       if (distilledQuestion) {
-        planAnswer.add('answer in thread ' + threadChannelId, {
+        dataFetcher.add('answer in thread ' + threadChannelId, {
+          plan: 'answer',
           threadChannelId,
           msgId,
           strAnlNr,
