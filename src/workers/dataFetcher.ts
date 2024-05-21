@@ -7,6 +7,7 @@ import redis from '../config/redis'
 import sqlPrompt from '../prompts/generateCustomerInfoSQL'
 import { answerQuestion, dataFetcher } from '../queues'
 import { createCompletion } from '../services/openai'
+import { resultToCsv } from '../lib/resultToCsv'
 
 class JobData extends Job {
   data: {
@@ -173,6 +174,8 @@ const worker = new Worker(
           results: 'Inga resultat hittades från databasen',
         })
       } else {
+        const csv = resultToCsv(results)
+
         msg.edit('Översätter resultat...')
         answerQuestion.add('answer in thread ' + threadChannelId, {
           threadChannelId,
@@ -181,7 +184,7 @@ const worker = new Worker(
           distilledQuestion,
           plan,
           sql,
-          results: JSON.stringify(results, null, 2),
+          results: csv,
         })
       }
       return { sql, distilledQuestion, plan, results }

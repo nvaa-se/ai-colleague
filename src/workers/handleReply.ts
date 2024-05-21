@@ -40,7 +40,7 @@ const worker = new Worker(
           return false
         }
 
-        await addReplyToThread(threadChannelId, reply)
+        await addReplyToThread(threadChannelId, reply, 'user')
         const msg = await thread.send('Sparar frågan...')
         summarizeAsk.add('answer reply in thread ' + threadChannelId, {
           threadChannelId,

@@ -39,16 +39,9 @@ const worker = new Worker(
         )}\n#################\n\n`
       )
 
-      const partThread = JSON.stringify([
-        `Kundens anläggningsnummer (strAnlNr): ${strAnlNr}`,
-        `Kundens anläggningsnummer (strAnlNr): ${strAnlNr}`,
-        `Kundens anläggningsnummer (strAnlNr): ${strAnlNr}`,
-        fullThread[fullThread.length - 1],
-      ])
-
       console.log(
         `\n\n#################\n${JSON.stringify(
-          partThread,
+          fullThread,
           null,
           2
         )}\n#################\n\n`
@@ -61,7 +54,7 @@ const worker = new Worker(
         },
         {
           role: 'user',
-          content: partThread,
+          content: JSON.stringify(fullThread),
         },
       ])
       clearInterval(typingHandle)
