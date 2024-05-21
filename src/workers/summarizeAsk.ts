@@ -5,7 +5,7 @@ import { getThreadContents } from '../services/dbAccess'
 import redis from '../config/redis'
 import { createCompletion } from '../services/mistral'
 import prompt from '../prompts/summarizeAsk'
-import { planAnswer } from '../queues'
+import { dataFetcher } from '../queues'
 
 class JobData extends Job {
   data: {
@@ -70,7 +70,8 @@ const worker = new Worker(
       console.log('## MISTRAL SUMMARIZE: ', distilledQuestion)
 
       if (distilledQuestion) {
-        planAnswer.add('answer in thread ' + threadChannelId, {
+        dataFetcher.add('answer in thread ' + threadChannelId, {
+          plan: 'answer',
           threadChannelId,
           msgId,
           strAnlNr,

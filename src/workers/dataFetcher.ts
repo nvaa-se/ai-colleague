@@ -7,7 +7,7 @@ import redis from '../config/redis'
 import { createCompletion } from '../services/mistral'
 import sqlPrompt from '../prompts/generateCustomerInfoSQL'
 import { answerQuestion, dataFetcher } from '../queues'
-import { resultToCsv } from '../lib/resultToCsv'
+
 class JobData extends Job {
   data: {
     threadChannelId: string

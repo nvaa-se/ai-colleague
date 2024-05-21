@@ -107,8 +107,6 @@ flowchart TB
     B2([take first 2 and last message])
     B3[Ask to summarize]
 
-    C1[Plan how to answer]
-
     D1([Split Mistral plan into tasks])
     D2[For each task, generate SQL]
     D3{Run SQL against MSSQL}
@@ -129,15 +127,12 @@ flowchart TB
         LW
     end
 
-    0 ==> A ==> summarizeAsk ==> planAnswer ==> dataFetcher ==> answerQuestion ==> M
+    0 ==> A ==> summarizeAsk ==> dataFetcher ==> answerQuestion ==> M
     subgraph summarizeAsk
         direction TB
         B1 --> B2 --> B3
     end
-    subgraph planAnswer
-        direction TB
-        C1
-    end
+
     subgraph dataFetcher
         direction TB
         D1 --> D2 --> D3 --SUCCESS--> D5
