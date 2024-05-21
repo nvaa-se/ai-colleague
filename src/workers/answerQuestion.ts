@@ -33,7 +33,7 @@ const worker = new Worker(
         thread.sendTyping()
       }, 8000)
 
-      const systemPrompt = prompt(results, plan, sql, distilledQuestion)
+      const systemPrompt = prompt(results, plan, sql)
       console.log('## MISTRAL PROMPT: ', systemPrompt, distilledQuestion)
       const sqlQueryResponse = await createCompletion(
         [
