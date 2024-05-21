@@ -1,7 +1,6 @@
 export default {
-  token: process.env.DISCORD_TOKEN,
-  clientId: process.env.DISCORD_APPLICATION_ID,
-  guildId: process.env.DISCORD_SERVER_ID,
-  channelId: process.env.DISCORD_CHANNEL_ID,
-  botUserId: process.env.DISCORD_BOT_USER_ID
+  openai_api_key: process.env.OPENAI_API_KEY,
+  openai_organization_id: process.env.OPENAI_ORGANIZATION_ID,
+  organization: process.env['OPENAI_ORGANIZATION_ID'],
+  apiKey: process.env['OPENAI_API_KEY'], // This is the default and can be omitted
 }

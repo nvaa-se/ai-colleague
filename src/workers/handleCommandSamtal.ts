@@ -45,11 +45,18 @@ const worker = new Worker(
           })
           .replace(',', '')
         const name = `${threadStart} — ${possibleCustomers[0].strFastBeteckningHel}`
-        const thread = await channel.threads.create({
+        let thread = await channel.threads.create({
           name: name,
           autoArchiveDuration: 1440,
           startMessage: messageId,
         })
+        if (!thread.id) {
+          thread = await channel.threads.create({
+            name: name,
+            autoArchiveDuration: 1440,
+            startMessage: messageId,
+          })
+        }
         console.log(
           `Thread called '${name}' created: '${thread.id} with message '${messageId}`
         )

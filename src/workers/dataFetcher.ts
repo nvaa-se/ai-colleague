@@ -4,10 +4,10 @@ import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
 import { runQuery } from '../services/dbAccess'
 import redis from '../config/redis'
-import { createCompletion } from '../services/mistral'
 import sqlPrompt from '../prompts/generateCustomerInfoSQL'
 import { answerQuestion, dataFetcher } from '../queues'
-import { resultToCsv } from '../lib/resultToCsv'
+import { createCompletion } from '../services/openai'
+
 class JobData extends Job {
   data: {
     threadChannelId: string
@@ -23,6 +23,10 @@ class JobData extends Job {
 const queryStruct = z.object({
   sql: z.string(),
 })
+
+type AIEngine = 'mistral' | 'openai'
+
+const using: AIEngine = 'openai'
 
 const worker = new Worker(
   'dataFetcher',
@@ -47,41 +51,44 @@ const worker = new Worker(
       let userPrompt = distilledQuestion
       let sql = undefined
       let json = undefined
-      let results = []
+      let results: Array<any> | undefined = undefined
       let parsed: z.SafeParseReturnType<any, any> | undefined = undefined
       let queryGenerationAttempts = 0
       const attemptLimit = 10
-      while (!json || !parsed?.success) {
-        // ESCAPE LOOP IF TOO MANY ATTEMPTS
-        if (queryGenerationAttempts >= attemptLimit) {
-          msg.edit(`För många försök... kunde inte skapa en korrekt SQL-fråga`)
-          throw new Error('Too many attempts')
-        }
-
+      while (
+        queryGenerationAttempts < attemptLimit &&
+        (!json || !parsed?.success)
+      ) {
         // GENERATE SQL QUERY RESPONSE
         try {
           let attempt = ` försök ${queryGenerationAttempts + 1}/${attemptLimit}`
           let systemPrompt = sqlPrompt(brokenSql, sqlError)
 
           await msg.edit(`Skapar databasfrågor... ${attempt}`)
-          const sqlQueryJsonResponse = await createCompletion(
-            [
-              {
-                role: 'system',
-                content: systemPrompt,
-              },
-              {
-                role: 'user',
-                content: userPrompt,
-              },
-            ],
-            json_mode
-          )
+          const completion = await createCompletion([
+            {
+              role: 'system',
+              content: systemPrompt,
+            },
+            {
+              role: 'user',
+              content: userPrompt,
+            },
+          ])
           await msg.edit(`Verifierar databasfrågor... ${attempt}`)
-
+          console.log('COMPLETION', JSON.stringify(completion, null, 2))
           // VERIFY VALID JSON
-          const sqlQueryJson =
-            sqlQueryJsonResponse.choices?.[0].message?.content
+          let sqlQueryJson: string
+          if (using !== 'openai') {
+            sqlQueryJson = completion.choices?.[0].message?.content
+          } else {
+            sqlQueryJson = completion
+              .replaceAll('```json', '')
+              .replaceAll('```', '')
+              .replaceAll('\n', '')
+              .trim()
+          }
+          console.log('SQL QUERY JSON: ', sqlQueryJson, completion)
           json = JSON.parse(sqlQueryJson)
           console.log('JSON: ', json)
 
@@ -135,13 +142,20 @@ const worker = new Worker(
           }
         } catch (error) {
           queryGenerationAttempts++
-          console.log('Fel vid databasfrågor: ' + error)
+          console.log('Fel vid databasfrågor: ', error, json, parsed, sql)
           json = undefined
           parsed = undefined
           sql = undefined
-          results = []
+          results = undefined
         }
       }
+
+      // ESCAPE JOB IF TOO MANY ATTEMPTS
+      if (queryGenerationAttempts >= attemptLimit && results == undefined) {
+        msg.edit(`För många försök... kunde inte skapa en korrekt SQL-fråga`)
+        throw new Error('Too many attempts')
+      }
+
       clearInterval(typingHandle)
       console.log('Klar med databasfrågor')
       msg.edit(`Fått ett resultat från databasen...`)
