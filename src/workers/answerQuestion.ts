@@ -26,14 +26,14 @@ const worker = new Worker(
     const { threadChannelId, msgId, distilledQuestion, plan, sql, results } =
       job.data
     let typingHandle: NodeJS.Timeout
+    const thread = (await discord.channel(threadChannelId)) as TextChannel
+    const msg = await thread.messages.fetch(msgId)
     try {
-      const thread = (await discord.channel(threadChannelId)) as TextChannel
-      const msg = await thread.messages.fetch(msgId)
       typingHandle = setInterval(() => {
         thread.sendTyping()
       }, 8000)
 
-      const systemPrompt = prompt(results, plan, sql)
+      const systemPrompt = prompt(results, plan, sql, distilledQuestion)
       console.log('## MISTRAL PROMPT: ', systemPrompt, distilledQuestion)
       const sqlQueryResponse = await createCompletion(
         [
@@ -47,21 +47,33 @@ const worker = new Worker(
           },
         ],
         false,
-        256
+        512,
+        'open-mixtral-8x22b'
       )
       clearInterval(typingHandle)
-
-      const answer = sqlQueryResponse.choices?.[0].message?.content
-      console.log('## MISTRAL ANSWER: ', answer)
-
-      if (answer) {
-        await msg.edit(answer)
-      } else {
-        await msg.edit(msg.content + '\nKunde inte förstå frågan, försök igen')
+      if (sqlQueryResponse) {
+        switch (sqlQueryResponse.object) {
+          case 'error':
+            msg.edit('Kunde inte svara på frågan: ' + sqlQueryResponse.message)
+            break
+          case 'chat.completion':
+            const answer = sqlQueryResponse.choices?.[0]?.message?.content
+            console.log('## MISTRAL ANSWER: ', answer)
+            await msg.edit(answer)
+            break
+          default:
+            msg.edit(
+              `Förstod inte formatet på svaret. {object: '${sqlQueryResponse.object}'} är inte implementerat. Kontakta utvecklare.`
+            )
+            job.log('Unhandled response from Mistral:')
+            job.log(JSON.stringify(sqlQueryResponse, null, 2))
+        }
       }
+
       return 'fake text'
     } catch (error) {
       clearInterval(typingHandle)
+      msg.edit('Kraschade när jag skulle svara på frågan, försök igen')
       job.log(`Fel vid answerQuestion för tråd ${threadChannelId}`)
       throw error
     }

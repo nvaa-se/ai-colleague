@@ -43,5 +43,6 @@ export const createCompletion = async (
     return result.data
   } catch (error) {
     console.log('Axios error', error)
+    return error?.response?.data
   }
 }
