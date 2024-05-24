@@ -13,6 +13,7 @@ import {
   planAnswer,
   dataFetcher,
   answerQuestion,
+  reflectToMemory,
 } from './queues'
 import * as workers from './workers'
 import { runQuery } from './services/dbAccess'
@@ -32,6 +33,7 @@ createBullBoard({
     new BullMQAdapter(planAnswer),
     new BullMQAdapter(dataFetcher),
     new BullMQAdapter(answerQuestion),
+    new BullMQAdapter(reflectToMemory),
   ],
   serverAdapter: serverAdapter,
   options: {

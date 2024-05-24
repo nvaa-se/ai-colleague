@@ -8,5 +8,6 @@
     "outDir": "dist"
   },
   "lib": ["es2021"],
-  "skipLibCheck": true
+  "skipLibCheck": true,
+  "strict": true
 }

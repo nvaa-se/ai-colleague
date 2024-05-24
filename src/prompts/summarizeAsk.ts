@@ -17,6 +17,8 @@ Du ska inte svara på frågan, utan bara förklara vad du tror att frågan inneb
 Skriv kort, koncist och exakt. Svara alltid på svenska. Nämn inte "kundtjänst"
 eller "kundtjänstmedarbetare".
 
+Skriv frågan på ett generellt och anonymiserat sätt, exempelvis "För den här kunden...." "Kunden undrar...".
+
 Håll ditt svar KORT!
 `
 

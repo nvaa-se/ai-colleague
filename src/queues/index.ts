@@ -12,6 +12,7 @@ const summarizeAsk = new Queue('summarizeAsk', options)
 const planAnswer = new Queue('planAnswer', options)
 const dataFetcher = new Queue('dataFetcher', options)
 const answerQuestion = new Queue('answerQuestion', options)
+const reflectToMemory = new Queue('reflectToMemory', options)
 
 export {
   handleCommandSamtal,
@@ -20,4 +21,5 @@ export {
   planAnswer,
   dataFetcher,
   answerQuestion,
+  reflectToMemory,
 }

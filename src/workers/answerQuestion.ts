@@ -9,6 +9,7 @@ import {
 import redis from '../config/redis'
 import { createCompletion } from '../services/mistral'
 import prompt from '../prompts/answerQuestion'
+import { reflectToMemory } from '../queues'
 
 class JobData extends Job {
   data: {
@@ -16,8 +17,8 @@ class JobData extends Job {
     msgId: string
     distilledQuestion: string
     plan: string
-    sql
-    results
+    sql: string
+    results: string
   }
 }
 
@@ -66,6 +67,15 @@ const worker = new Worker(
             console.log('## MISTRAL ANSWER: ', answer)
             await msg.edit(answer)
             await addReplyToThread(thread.id, answer, 'assistant')
+            reflectToMemory.add(distilledQuestion, {
+              threadChannelId,
+              msgId,
+              distilledQuestion,
+              plan,
+              sql,
+              results,
+              answer,
+            })
             break
           default:
             msg.edit(

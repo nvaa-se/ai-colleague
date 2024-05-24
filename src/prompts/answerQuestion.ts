@@ -29,6 +29,8 @@ Om datan är bättre att representera i en tabell, så skriv den i detta format:
 | Värde4      | Värde5      | Värde6      |
 \`\`\`
 
+Om det finns datumkolumner bör de vara sorterade med senast först.
+
 När du svarat på frågan, fundera på om det finns en följdfråga som kan vara relevant och erbjud dig att svara på den.
 `
 
