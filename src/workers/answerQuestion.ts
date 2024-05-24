@@ -2,6 +2,7 @@ import { Worker, Job } from 'bullmq'
 import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
 import {
+  addReplyToThread,
   getFacilityThreadByThreadChannelId,
   getThreadContents,
 } from '../services/dbAccess'
@@ -33,7 +34,7 @@ const worker = new Worker(
         thread.sendTyping()
       }, 8000)
 
-      const systemPrompt = prompt(results, plan, sql, distilledQuestion)
+      const systemPrompt = prompt(results, plan, sql)
       console.log('## MISTRAL PROMPT: ', systemPrompt, distilledQuestion)
       const sqlQueryResponse = await createCompletion(
         [
@@ -47,8 +48,8 @@ const worker = new Worker(
           },
         ],
         false,
-        512,
-        'open-mixtral-8x22b'
+        2048
+        // , 'open-mixtral-8x22b'
       )
       clearInterval(typingHandle)
       if (sqlQueryResponse) {
@@ -58,8 +59,13 @@ const worker = new Worker(
             break
           case 'chat.completion':
             const answer = sqlQueryResponse.choices?.[0]?.message?.content
+            if (!answer) {
+              console.log(JSON.stringify(sqlQueryResponse, null, 2))
+              throw new Error('No answer in completion')
+            }
             console.log('## MISTRAL ANSWER: ', answer)
             await msg.edit(answer)
+            await addReplyToThread(thread.id, answer, 'assistant')
             break
           default:
             msg.edit(
@@ -67,6 +73,7 @@ const worker = new Worker(
             )
             job.log('Unhandled response from Mistral:')
             job.log(JSON.stringify(sqlQueryResponse, null, 2))
+            throw new Error('Unhandled response from Mistral')
         }
       }
 

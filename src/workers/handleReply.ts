@@ -1,4 +1,5 @@
 import { Worker, Job } from 'bullmq'
+import discordConfig from '../config/discord'
 import discord from '../services/discord'
 import { TextChannel } from 'discord.js'
 import {
@@ -21,14 +22,25 @@ const worker = new Worker(
     const { threadChannelId, reply } = job.data
     try {
       job.log(`handleReply: ${reply}`)
+
       const thread = (await discord.channel(threadChannelId)) as TextChannel
       thread.sendTyping()
 
       const threadModel = await getFacilityThreadByThreadChannelId(
         threadChannelId
       )
+
       if (threadModel) {
-        await addReplyToThread(threadChannelId, reply)
+        const mentions = gatherMentions(reply)
+        if (
+          mentions.length > 0 &&
+          !mentions.includes(discordConfig.botUserId)
+        ) {
+          thread.send('Tolkar inte detta som en fråga till mig...')
+          return false
+        }
+
+        await addReplyToThread(threadChannelId, reply, 'user')
         const msg = await thread.send('Sparar frågan...')
         summarizeAsk.add('answer reply in thread ' + threadChannelId, {
           threadChannelId,
@@ -52,5 +64,27 @@ const worker = new Worker(
     autorun: false,
   }
 )
+
+const gatherMentions = (reply: string): string[] => {
+  const regex = new RegExp('<@(?<userid>\\d+)>', 'gm')
+
+  const result: string[] = []
+  let m
+
+  while ((m = regex.exec(reply)) !== null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++
+    }
+
+    // The result can be accessed through the `m`-variable.
+    m.forEach((match, groupIndex) => {
+      if (groupIndex === 1) {
+        result.push(match)
+      }
+    })
+  }
+  return result
+}
 
 export default worker

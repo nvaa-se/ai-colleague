@@ -65,14 +65,17 @@ export const getFullCustomerInfo = async (facilityRecnum: number) => {
   }
 }
 
+type Role = 'assistant' | 'user' | 'system'
+
 export const addReplyToThread = async (
   threadChannelId: string,
-  reply: string
+  reply: string,
+  role: Role = 'assistant'
 ) => {
   const redisClient = await redis.getClient()
   const res = await redisClient.rPush(
     `${redisPrefixes.threadReplies}:${threadChannelId}`,
-    reply
+    JSON.stringify({ role, content: reply })
   )
   await extendThreadLifeTime(threadChannelId)
   return res

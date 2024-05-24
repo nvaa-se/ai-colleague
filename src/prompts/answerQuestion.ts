@@ -15,10 +15,21 @@ Denna data blev resultatet
 ${data}
 \`\`\`
 
-Svara på frågan!
-Svara kort och koncist på frågan, helst med max 2 meningar.
+Försök svara på frågan!
+Svara kort och koncist på frågan, helst med max 2-4 meningar.
 Skriv kort, koncist och exakt. Svara alltid på svenska. Nämn inte "kundtjänst"
 eller "kundtjänstmedarbetare". ANVÄND DATA OVAN!!
+
+Om datan är bättre att representera i en tabell, så skriv den i detta format:
+
+\`\`\`
+| Kolumnnamn1 | Kolumnnamn2 | Kolumnnamn3 |
+|-------------|-------------|-------------|
+| Värde1      | Värde2      | Värde3      |
+| Värde4      | Värde5      | Värde6      |
+\`\`\`
+
+När du svarat på frågan, fundera på om det finns en följdfråga som kan vara relevant och erbjud dig att svara på den.
 `
 
 export default prompt

@@ -33,6 +33,7 @@ const worker = new Worker(
         )
       } else if (possibleCustomers.length === 1) {
         const initialResponse = `1 anläggning hittades med anläggningsnummer (${strAnlNr})`
+
         message.edit(initialResponse)
         // const fullCustomerInfo = await getFullCustomerInfo(possibleCustomers[0].intRecnum)
         const threadStart = new Date()
@@ -45,24 +46,32 @@ const worker = new Worker(
           })
           .replace(',', '')
         const name = `${threadStart} — ${possibleCustomers[0].strFastBeteckningHel}`
-        const thread = await channel.threads.create({
+        let thread = await channel.threads.create({
           name: name,
           autoArchiveDuration: 1440,
           startMessage: messageId,
         })
+        if (!thread.id) {
+          thread = await channel.threads.create({
+            name: name,
+            autoArchiveDuration: 1440,
+            startMessage: messageId,
+          })
+        }
         console.log(
           `Thread called '${name}' created: '${thread.id} with message '${messageId}`
         )
         await thread.sendTyping()
-        const reply = `Kundens namn: \`${possibleCustomers[0].strKundNamnHel}\`
+        const customerCard = `Kundens namn: \`${possibleCustomers[0].strKundNamnHel}\`
 Adress: \`${possibleCustomers[0].strAnlAdressHel}\`
 Fastighetsbeteckning: \`${possibleCustomers[0].strFastBeteckningHel}\`
 KundNummer: \`${possibleCustomers[0].intKundnr}\`
 Anläggningsnummer: \`${possibleCustomers[0].strAnlnr}\``
 
         await addThread(thread.id, possibleCustomers[0].strAnlnr)
-        await addReplyToThread(thread.id, reply)
-        const res = await thread.send(reply)
+        await addReplyToThread(thread.id, initialResponse, 'assistant')
+        await addReplyToThread(thread.id, customerCard, 'assistant')
+        const res = await thread.send(customerCard)
       } else {
         let msg = `${possibleCustomers.length} anläggningar hittades`
         possibleCustomers.forEach((facility, index) => {
