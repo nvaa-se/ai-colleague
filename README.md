@@ -74,9 +74,9 @@ flowchart TB
     B --Not found--> E
 
     %% BullMQ Queue Style
-    style LW color:#ffffff, fill:#303a4b, stroke:#454b52
-    style A color:#ffffff, fill:#303a4b, stroke:#454b52
-    style D color:#ffffff, fill:#303a4b, stroke:#454b52
+    style LW color:#ffffff, fill:#303a4b, stroke:#767b72
+    style A color:#ffffff, fill:#303a4b, stroke:#767b72
+    style D color:#ffffff, fill:#303a4b, stroke:#767b72
 
     %% Discord Style
     style LD color:#FFFFFF, fill:#5865F2, stroke:#5865F2
@@ -99,6 +99,8 @@ flowchart TB
     LS[MSSQL]
     LR[REDIS]
     LW[BullMQ Queue/Worker]
+    LCD[Chroma DB]
+    LOAI[OpenAI]
 
     0(onMessage)
     A[handleReply]
@@ -110,7 +112,7 @@ flowchart TB
     C1[Plan how to answer]
 
     D1([Split Mistral plan into tasks])
-    D2[For each task, generate SQL]
+    OAI1[For each task, generate SQL]
     D3{Run SQL against MSSQL}
     D4[Ask to verify, and generate new SQL]
 
@@ -118,18 +120,22 @@ flowchart TB
     L[Answer Questions with prompt]
     M[Reply answer]
 
-    NA(["NOT IMPLEMENTED YET"])
+    %% NA(["NOT IMPLEMENTED YET"])
 
     subgraph LEGEND
-        direction TB
+        direction LR
         LD
         LM
         LS
         LR
         LW
+        LCD
+        LOAI
     end
 
     0 ==> A ==> summarizeAsk ==> planAnswer ==> dataFetcher ==> answerQuestion ==> M
+    answerQuestion ==> reflectToMemory
+
     subgraph summarizeAsk
         direction TB
         B1 --> B2 --> B3
@@ -140,22 +146,29 @@ flowchart TB
     end
     subgraph dataFetcher
         direction TB
-        D1 --> D2 --> D3 --SUCCESS--> D5
+        D1 --> OAI1 --> D3 --SUCCESS--> D5
         D3 --FAIL--> D4 --> D3
     end
     subgraph answerQuestion
         direction TB
         L
     end
+    subgraph reflectToMemory
+        direction TB
+        OAI2[Reflect on SQL Query]
+        CD1[Save to Chroma DB]
+        OAI2 --> CD1
+    end
 
 
     %% BullMQ Queue Style
-    style LW color:#ffffff, fill:#303a4b, stroke:#454b52
-    style A color:#ffffff, fill:#303a4b, stroke:#454b52
-    style summarizeAsk color:#ffffff, fill:#303a4b, stroke:#454b52
-    style planAnswer color:#ffffff, fill:#303a4b, stroke:#454b52
-    style dataFetcher color:#ffffff, fill:#303a4b, stroke:#454b52
-    style answerQuestion color:#ffffff, fill:#303a4b, stroke:#454b52
+    style LW color:#ffffff, fill:#767b72, stroke:#767b62
+    style A color:#ffffff, fill:#767b72, stroke:#767b72
+    style summarizeAsk color:#ffffff, fill:#767b72, stroke:#767b72
+    style planAnswer color:#ffffff, fill:#767b72, stroke:#767b72
+    style dataFetcher color:#ffffff, fill:#767b72, stroke:#767b72
+    style answerQuestion color:#ffffff, fill:#767b72, stroke:#767b72
+    style reflectToMemory color:#ffffff, fill:#767b72, stroke:#767b72
 
     %% Discord Style
     style LD color:#FFFFFF, fill:#5865F2, stroke:#5865F2
@@ -166,19 +179,32 @@ flowchart TB
     style LR color:#FFFFFF, stroke:#A41e11, fill:#A41e11
 
     %% Not implemented Style
-    %% style NA color:#FF0000, fill:#303a4b, stroke:#FF0000, stroke-width:4px, stroke-dasharray: 5, 5
+    %% style NA color:#FF0000, fill:#767b72, stroke:#FF0000, stroke-width:4px, stroke-dasharray: 5, 5
 
     %% Mistral Style
     style LM color:#000000, stroke:#ff4900, fill:#ff7000
     style B3 color:#000000, stroke:#ff4900, fill:#ff7000
     style C1 color:#000000, stroke:#ff4900, fill:#ff7000
-    style D2 color:#000000, stroke:#ff4900, fill:#ff7000
+    %% style D2 color:#000000, stroke:#ff4900, fill:#ff7000
     style D4 color:#000000, stroke:#ff4900, fill:#ff7000
     style L color:#000000, stroke:#ff4900, fill:#ff7000
+
 
     %% MSSQL Style
     style LS color:#537F18, fill:#BDD352, stroke:#537F18
     style D3 color:#537F18, fill:#BDD352, stroke:#537F18
+
+    %% Chroma DB Style
+    style LCD color:#000000, fill:#FFD700, stroke:#FFD700
+    style CD1 color:#000000, fill:#FFD700, stroke:#FFD700
+
+    %% OpenAI Style
+    style LOAI color:#ffffff, fill:#aaaa77, stroke:#ffffff
+    style OAI1 color:#ffffff, fill:#767b72, stroke:#ffffff
+    style OAI2 color:#ffffff, fill:#767b72, stroke:#ffffff
+
+    %% LEGEND Style
+    style LEGEND color:#000000, fill:#aaaa77, stroke:#aaaa77
 ```
 
 ## New workflow

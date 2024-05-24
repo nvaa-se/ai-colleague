@@ -1,69 +1,6 @@
-const prompt = `
-Du är en kundtjänstmedarbetare på Norrtälje Vatten och Avfall (NVAA), frågan som användaren ställer handlar om en
-specifik kund. Svara kort, koncist och exakt. Svara alltid på svenska.
-Här är kundens data
-
-
-f = anläggningar, tabellen tbFuAnlaggning
-e = händelser, tabellen tbFuHandelse
-d = avvikelser, tabellen tbFuRenhAvvikelse
-t = taxor, tabellen tbFuTaxa
-
-e.recHandelse = Primärnyckel för händelsetabellen
-e.intKundnr = Unika numret för en kund
-e.strAnlnr = Unika numret för en anläggning, en anläggning kan vara en fastighet men även ett annat objekt så som en fontän eller någon annan typ av offentlig byggnad osv.
-e.intTjanstnr = Det unika numret för en tjänst. En tjänst är något vi utför. Kan vara ett abonnemang för soptömning, slambrunn, vattentjänst mm
-e.intFakturaadress = Unikt numret till en specialadress. En specialadess är en alternativ adress som ska användas istället för kundens primära adress
-e.datDatumFrom = Från och med när händelsen gäller
-e.datDatumTom = Till och med datumet för händelsen
-e.strTaxekod = Koden för taxan. Taxa innehåller uppgifter om debitering och ersättning. Alltså vad tjänsten eller händelsen avser
-e.strAnm = Anmärkningstext för händelsen
-e.strRFID = Rfid tagg på sopkärl
-e.strFordon = Vilket fordon som utfört händelsen
-e.strFordonkod = Unika koden för ett fordon som utfört händelsen
-e.strAvvikelsekod = Koden för avvikelsen som registrerats
-e.strObjNr = Numret till ett objekt vilket är primärnyckel för tabellen där RFID finns
-e.strKorlistakod = Koden för körlistan som är "beställningen" för händelsen. Körlistor används för soptömningar. Det är rutterna som körs
-e.strUtfortAvSignatur = Vilken chaufför som utfört händelsen
-e.lngFakturanr = Om händelsen fakturerats, så är detta fakturans nummer
-e.strFakturafrekvens = Koden för när det ska faktureras
-e.bolKlarAttFakturera = Flagga för att händelsen ska fakturerats
-e.strHandelseText = Ett textfält för händelsen. Kan användas för att visas på fakturan
-e.bolEnbartHandelseTextPaFakturan = Berättar om endast händelsetexten ska visas på fakturan. Annars visas texten ifrån taxan.
-e.bolFakturerasEj = Berättar om händelsen inte ska faktureras
-e.strEntreprenorkod = Kod för vilken entreprenör som utfört händelsen
-e.intRenhOrdernr = Ordernummer om händelsen är skapad utifrån en order
-e.intRenhOrderradnr = Vilken rad i orden händelsen är skapad utifrån
-e.intVAOrdernr = Om Händelsen är skapad utifrån en VA-order
-e.curFastPrisNetto = Om händelsen ska debiteras med ett fast nettopris.
-e.strAvfallstyp = Vilken typ av avfall händelsen gäller
-e.datSkapad = Skapad datum
-e.intSkapadAv = Vilken användare i systemet som skapat händelsen
-e.strHandelsetyp = Kod för vilken typ av händelse det är
-e.intFakturaradnr = Om fakturerad, så vilken rad på fakturan är genererad utifrån händelsen
-e.datAvraknadDatum = Vilken datum händelsen är avräknad. Används för att få ut ett underlag för vilken ersättning entreprenör (utförare) ska få.
-e.datKrediteringGodkandDatum = Om händelsen fakturerats och sedan krediterats så anges datum för krediteringen
-e.strKrediteringGodkandSignatur = Vilken användare som krediterat
-e.bolKrediteringsFragaSkickad = Om händelsen eventuellt ska krediteras
-e.strAvvikelseText = Förklaring av vad eventuell avvikelse avser
-e.recHandelsefilInlasning = Primärnyckel för register för vilken inläsningsfil som skapat händelsen
-e.curAprisNetto = Om händelsen ska debiteras med ett netto pris
-e.intInstallationsNr = Om händelsen är genererad utifrån en VA-installation. Det används då som ett faktura underlag för anslutningsavgift
-e.bolAvraknasEj = Om händelsen inte ska avräknas. Alltså inte ge någon ersättning till utförare (entreprenör)
-e.intSkapadAvRecHandelse = Vet ej
-e.intVAOrderradnr = Vilken rad, om händelsen kommer ifrån en VA-order
-e.bolAvvikelse = Om händelsen avser en avvikelse
-e.decXkoord = xKoordinat på händelsens geoposition
-e.decYkoord = yKoordinat på händelsens geoposition
-e.strFakturerasEjOrsak = Orsak till varför händelsen inte bör fakturerats. Om den nu ska faktureras i normal fall
-e.strFakturerasEjOrsakText = Löptext till strFakturerasEjOrsak. Alltså en utförligare förklaring
-e.datDatum = Datum för händelsen utan klockslag
-e.strFotoId = Om händelsen har ett kopplat foto
-e.datFotoHamtat = Datum för när fotot hämtat ifrån fotoservern
-e.strObjekt =
-e.strProjekt = Om händelsen har ett projektnummer (det kan komma ifrån VA-installation)
-e.strTjanstensOrderIndex = Vet ej/används inte
-
+export default `
+The database server is running Microsoft SQL Server 2020.
+This is the layout of the tables in the database:
 \`\`\`sql
 CREATE TABLE tbFuHandelse (
 	recHandelse int,
@@ -307,9 +244,102 @@ CREATE TABLE tbFuAnlaggning (
 	bolFAKommun bit,
 	CONSTRAINT PKtbFuAnlaggning PRIMARY KEY (strAnlnr)
 );
+
+CREATE TABLE tbFuFaktura (
+	intRecnum int IDENTITY(1,1),
+	lngFakturanr bigint,
+	intKundnr int,
+	intSpecialAdressnr int,
+	strSeparatAnlnr varchar(15)
+	strForstaAnlnr varchar(15)
+	strFakturaEfternamn1 varchar(40)
+	strFakturaFornamn1 varchar(40)
+	strFakturaEfternamn2 varchar(40)
+	strFakturaFornamn2 varchar(40)
+	strFakturaAdressGata varchar(40)
+	intFakturaAdressnr int,
+	strFakturaAdressbokstav varchar(20)
+	strPostnr varchar(8)
+	strOrt varchar(60)
+	strLandkod char(2)
+	strDistributionssatt char(4)
+	strFakturasortering varchar(2)
+	strBetalningssatt char(4)
+	strBetalstatus char(4)
+	strKravstatus char(4)
+	strAvskrivningsstatus char(4)
+	bolReglerad bit,
+	bytFakturaex tinyint,
+	curBruttobelopp decimal(12,2),
+	curNettobelopp decimal(12,2),
+	decOresavrundning decimal(9,2),
+	curRenhbelopp decimal(12,2),
+	curKvarAttBetala decimal(12,2),
+	datFakturadatum smalldatetime,
+	datForfallodatum smalldatetime,
+	datAnstandTom smalldatetime,
+	datPaminnelsedatum smalldatetime,
+	datInkassodatum smalldatetime,
+	datAvstangningsdatum smalldatetime,
+	datBetalningsforelaggandedatum smalldatetime,
+	datLangtidsbevakningsdatum smalldatetime,
+	datUtskriven smalldatetime,
+	datBokforingsdatum smalldatetime,
+	datSenKravBetDatum smalldatetime,
+	bolInternfaktura bit,
+	bolFlyttfaktura bit,
+	bolFrifaktura bit,
+	bolRantefaktura bit,
+	bolOrdinariefaktura bit,
+	bolForseningsAvgiftFaktura bit,
+	curPaminnelseavgift decimal(12,2),
+	strAnteckning varchar(1000),
+	strKundtext varchar(1000),
+	datAvstangningshotdatum smalldatetime,
+	datOppningsdatum smalldatetime,
+	bolAtgardstackningsaknas bit,
+	strFakturaKundReferens varchar(60),
+	curMoms decimal(12,2),
+	strFakturaVarReferens varchar(100),
+	datAutogirofildatum smalldatetime,
+	datAutogirofildatumAnnullerad smalldatetime,
+	datExternreskontradatum smalldatetime,
+	datExternreskontradatumAnnullerad smalldatetime,
+	datReskontraSkapaddatum smalldatetime,
+	strFakturagrupp varchar(6),
+	strOCRnr varchar(20),
+	datEfakturafildatum smalldatetime,
+	bolStoppaUtskrift bit,
+	strBetalningsforelaggandeAvser varchar(30),
+	datSkapad datetime,
+	intSkapadAv int,
+	strValutakod char(3),
+	bolArkiverad bit,
+	strVarReferensKod varchar(10),
+	curPaminnelseavgiftAvskriven decimal(12,2),
+	curPaminnelseavgiftOverford decimal(12,2),
+	bolPaminnelseavgiftPaPaminnelse bit,
+	strBilagor varchar(50),
+	datFlyttDatum smalldatetime,
+	strFakturagruppering varchar(50),
+	bolEjArkiveradIEDPArkiv bit,
+	datFakturaAndelSkapaddatum smalldatetime,
+	bolSidbrytPerAnlaggning bit,
+	strKravText varchar(200),
+	bolTvingaUtInkasso bit,
+	strArendenrUtslagsnr varchar(30),
+	bolAnnulleradMedNyFaktura bit,
+	lngSkapadAvAnnulleradFakturanr bigint,
+	strUrsprung varchar(20),
+	strRegistratorLoginID varchar(10),
+	strFakturaExtra1 varchar(100),
+	strFakturaExtra2 varchar(100),
+	strFakturaExtra3 varchar(100),
+	strFakturaExtra4 varchar(100),
+	strMomsregnr varchar(14),
+);
+
+
 \`\`\`
 
-
 `
-
-export default prompt
