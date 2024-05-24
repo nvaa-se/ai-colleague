@@ -13,6 +13,7 @@ import prompt from '../prompts/reflectToMemory'
 import databaseLayout from '../prompts/databaseLayout'
 import fieldsDescription from '../prompts/fieldsDescription'
 import { z } from 'zod'
+import { indexDocuments } from '../queues'
 
 class JobData extends Job {
   data: {
@@ -93,11 +94,24 @@ const worker = new Worker(
           } catch(err) {
             throw new Error('Kunde inte tolka svaret från Mistral\n' + err)
           }
-
-
-
           console.log('## MISTRAL ANSWER: ', JSON.stringify(result, null, 2))
           job.log('## MISTRAL ANSWER: ' + JSON.stringify(result, null, 2))
+          indexDocuments.add('index sql', {
+            collectionName: 'sql-queries',
+            documents: [`
+            Frågan från användaren:
+            ${distilledQuestion}
+
+            AI-genererad SQL:
+            \`\`\`sql
+            ${result.improved_sql}
+            \`\`\`
+
+            Förväntad träffsäkerhet i procent:
+            ${result.accuracy}
+          `,
+            ],
+          })
           return result
     } else {
       return 'No response from Mistral'
