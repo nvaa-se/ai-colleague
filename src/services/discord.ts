@@ -58,6 +58,7 @@ export class Discord extends EventEmitter {
             handleReply.add('handleReply', {
               threadChannelId: message?.channel?.id,
               reply: message.content,
+              messageId: message.id,
             })
           }
         }

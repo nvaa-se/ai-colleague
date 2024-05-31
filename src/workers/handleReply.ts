@@ -13,18 +13,18 @@ class JobData extends Job {
   data: {
     threadChannelId: string
     reply: string
+    messageId: string
   }
 }
 
 const worker = new Worker(
   'handleReply',
   async (job: JobData) => {
-    const { threadChannelId, reply } = job.data
+    const { threadChannelId, reply, messageId } = job.data
     try {
       job.log(`handleReply: ${reply}`)
 
       const thread = (await discord.channel(threadChannelId)) as TextChannel
-      thread.sendTyping()
 
       const threadModel = await getFacilityThreadByThreadChannelId(
         threadChannelId
@@ -36,10 +36,11 @@ const worker = new Worker(
           mentions.length > 0 &&
           !mentions.includes(discordConfig.botUserId)
         ) {
-          thread.send('Tolkar inte detta som en fråga till mig...')
+          const message = await thread.messages.fetch(messageId)
+          message.react('😎')
           return false
         }
-
+        thread.sendTyping()
         await addReplyToThread(threadChannelId, reply, 'user')
         const msg = await thread.send('Sparar frågan...')
         summarizeAsk.add('answer reply in thread ' + threadChannelId, {
@@ -49,7 +50,8 @@ const worker = new Worker(
         })
       } else {
         job.log('Kunde inte hitta tråd-koppling till facility')
-        thread.send('Tråden för gammal, starta en ny tråd')
+        const message = await thread.messages.fetch(messageId)
+        message.react('😴')
       }
       return 'fake text'
     } catch (error) {

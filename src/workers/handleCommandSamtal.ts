@@ -48,13 +48,13 @@ const worker = new Worker(
         const name = `${threadStart} — ${possibleCustomers[0].strFastBeteckningHel}`
         let thread = await channel.threads.create({
           name: name,
-          autoArchiveDuration: 1440,
+          autoArchiveDuration: 1440, // 24 hours
           startMessage: messageId,
         })
         if (!thread.id) {
           thread = await channel.threads.create({
             name: name,
-            autoArchiveDuration: 1440,
+            autoArchiveDuration: 1440, // 24 hours
             startMessage: messageId,
           })
         }

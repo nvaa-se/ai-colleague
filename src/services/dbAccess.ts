@@ -20,7 +20,7 @@ const redisPrefixes = {
   threadFacilityRecnum: 'threadFacilityRecnum',
   threadReplies: 'threadReplies',
 }
-const EXPIRY = 1440
+const EXPIRY = 1440 * 60 // 24 hours
 
 export const runQuery = async (query: string) => {
   return db.raw(query)
