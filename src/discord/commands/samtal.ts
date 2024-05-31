@@ -22,7 +22,18 @@ export default {
   async execute(interaction: ChatInputCommandInteraction<CacheType>) {
     const strAnlNr = interaction.options.getString('anläggningsnummer')
     console.log('samtal', strAnlNr)
+    const allowedAnlNr = [
+      '4212108221',
+      '1016301358',
+    ]
+    if(allowedAnlNr.includes(strAnlNr) === false) {
+      await interaction.reply({
+        content: `Anläggningsnummer \`${strAnlNr}\` är inte tillåtet. Vi tillåter bara dessa: \n${allowedAnlNr.map((a)=>`- \`${a}\``).join('\n')}`,
+        ephemeral: true,
+      })
 
+      return
+    }
     /*    if (!telefonnummer) {
       await interaction.reply({
         content:
